@@ -1,0 +1,87 @@
+<!-- Contenedor principal para centrar y aplicar fondo -->
+<div class="login-canil-wrapper">
+    <!-- Tarjeta de Login -->
+    <div class="login-card">
+        
+        <h2 class="titulo-principal text-center mb-4">
+            Clínica OnLine
+        </h2>
+        <p class="text-center text-gray-600 mb-8 subtitulo-seccion">Ingresa a tu cuenta</p>
+
+        <!-- Formulario de Login -->
+        <form [formGroup]="loginForm" (ngSubmit)="iniciarSesion()">
+            
+            <!-- Campo Email -->
+            <div class="mb-4">
+                <label class="block text-gray-700 text-sm font-bold mb-2" for="mail">Correo Electrónico</label>
+                <input 
+                    class="input-field shadow appearance-none w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" 
+                    id="mail" 
+                    type="email" 
+                    formControlName="mail"
+                    placeholder="tu@correo.com"
+                >
+                <p *ngIf="c['mail'].invalid && c['mail'].touched" class="text-red-500 text-xs italic mt-1">
+                    Ingresa un correo electrónico válido.
+                </p>
+            </div>
+            
+            <!-- Campo Contraseña -->
+            <div class="mb-6">
+                <label class="block text-gray-700 text-sm font-bold mb-2" for="password">Contraseña</label>
+                <input 
+                    class="input-field shadow appearance-none w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" 
+                    id="password" 
+                    type="password" 
+                    formControlName="password"
+                    placeholder="********"
+                >
+                <p *ngIf="c['password'].hasError('minlength') && c['password'].touched" class="text-red-500 text-xs italic mt-1">
+                    La contraseña debe tener al menos 6 caracteres.
+                </p>
+            </div>
+
+            <!-- Mostrar Error de Login -->
+            <p *ngIf="errorLogin()" class="error-message">{{ errorLogin() }}</p>
+
+            <!-- Botón de Ingreso -->
+            <div class="flex items-center justify-center mt-6">
+                <button 
+                    [disabled]="loginForm.invalid || loading()"
+                    type="submit" 
+                    class="btn-login font-bold py-3 px-6 rounded-xl transition duration-300 w-full"
+                >
+                    <span *ngIf="!loading()">Ingresar</span>
+                    <span *ngIf="loading()">
+                        <div class="animate-spin inline-block w-4 h-4 border-2 border-current border-t-transparent rounded-full mr-2"></div>
+                        Cargando...
+                    </span>
+                </button>
+            </div>
+        </form>
+
+        <!-- Enlace a Registro -->
+        <p class="text-center text-sm text-gray-500 mt-6">
+            ¿Aún no tienes cuenta? <a routerLink="/registro" class="text-blue-600 hover:underline font-medium">Regístrate aquí</a>
+        </p>
+
+        <!-- Botones de Acceso Rápido -->
+        <div class="acceso-rapido-container">
+            <h3 class="acceso-rapido-titulo">Acceso Rápido (Pruebas)</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <button 
+                    *ngFor="let user of accesoRapidoUsuarios"
+                    (click)="cargarAccesoRapido(user.mail, user.pass)"
+                    class="btn-acceso-rapido"
+                    [ngClass]="{'bg-indigo-100 border-indigo-500 text-indigo-700': user.perfil === 'Admin', 'bg-teal-100 border-teal-500 text-teal-700': user.perfil === 'Especialista', 'bg-blue-100 border-blue-500 text-blue-700': user.perfil === 'Paciente'}"
+                >
+                    {{ user.perfil }}
+                </button>
+            </div>
+            <p class="text-xs text-gray-400 text-center mt-3">
+                * Las reglas de validación de cuentas (Verificado / Aprobado) están aplicadas a estos usuarios.
+            </p>
+        </div>
+        
+    </div>
+</div>

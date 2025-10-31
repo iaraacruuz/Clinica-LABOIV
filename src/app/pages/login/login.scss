@@ -1,0 +1,118 @@
+// Variables de Color (Usando valores directos como en el ejemplo anterior)
+$color-primary-green: #059669; // Green-600
+$color-secondary-blue: #3b82f6; // Blue-500
+$color-dark-green: #047857; // Green-700
+
+// --- Contenedor Principal ---
+.login-canil-wrapper {
+    min-height: 100vh;
+    background-color: #f0fdfa; /* Green-50 */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 1rem;
+    font-family: 'Inter', sans-serif;
+}
+
+// --- Tarjeta de Login ---
+.login-card {
+    background-color: #ffffff;
+    border: 1px solid #d1fae5; /* Green-100 */
+    box-shadow: 0 10px 25px -3px rgba(0, 0, 0, 0.1), 0 4px 10px -2px rgba(0, 0, 0, 0.05);
+    border-radius: 1.5rem; 
+    max-width: 28rem; 
+    width: 100%;
+    padding: 2.5rem;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    
+    @media (max-width: 640px) {
+        padding: 2rem 1.5rem;
+    }
+}
+
+.titulo-principal {
+    color: $color-dark-green; 
+    font-size: 2rem; 
+    font-weight: 800; 
+}
+
+.subtitulo-seccion {
+    color: #6b7280; /* Gray-500 */
+    font-weight: 500;
+}
+
+// --- Inputs ---
+.input-field {
+    border: 1px solid #d1d5db; 
+    border-radius: 0.75rem; 
+    transition: box-shadow 0.3s, border-color 0.3s;
+    
+    &:focus {
+        outline: none;
+        border-color: $color-primary-green; 
+        box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.2);
+    }
+}
+
+// --- Botón de Login ---
+.btn-login {
+    background-color: $color-primary-green; 
+    color: #ffffff;
+    box-shadow: 0 5px 15px -3px rgba(5, 150, 105, 0.4);
+    font-weight: 700;
+    
+    &:hover:not(:disabled) {
+        background-color: $color-dark-green; 
+        transform: translateY(-1px);
+    }
+    
+    &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        box-shadow: none;
+    }
+}
+
+// --- Mensaje de Error ---
+.error-message {
+    text-align: center;
+    color: #ef4444; /* Red-500 */
+    background-color: #fef2f2; /* Red-50 */
+    padding: 0.75rem;
+    border-radius: 0.5rem;
+    margin-top: 1rem;
+    border: 1px solid #fecaca; /* Red-200 */
+    font-weight: 600;
+}
+
+// --- Acceso Rápido ---
+.acceso-rapido-container {
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px dashed #e5e7eb;
+}
+
+.acceso-rapido-titulo {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #6b7280;
+    text-align: center;
+    margin-bottom: 1rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.btn-acceso-rapido {
+    padding: 0.75rem 0.5rem;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    font-size: 0.875rem;
+    border: 1px solid;
+    transition: transform 0.2s, box-shadow 0.2s;
+    text-align: center;
+
+    &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+}

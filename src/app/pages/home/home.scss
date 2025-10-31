@@ -1,0 +1,27 @@
+/*
+ * SCSS para el componente Home.
+ * Las clases de estilo principales se manejan con Tailwind CSS en el HTML.
+ */
+
+.home-container {
+    // Asegura que ocupe todo el espacio que le da el <main>
+    width: 100%;
+    height: 100%;
+}
+
+.home-card {
+    // Aplicamos una animación de entrada personalizada
+    animation: fadeIn 0.8s ease-out;
+}
+
+// Definición de la animación para la tarjeta
+@keyframes fadeIn {
+    from { 
+        opacity: 0; 
+        transform: translateY(20px); 
+    }
+    to { 
+        opacity: 1; 
+        transform: translateY(0); 
+    }
+}

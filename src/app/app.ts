@@ -1,12 +1,26 @@
-import { Component, signal } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { Router, RouterOutlet } from '@angular/router';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet],
+  standalone: true,
+  imports: [CommonModule,RouterOutlet],
   templateUrl: './app.html',
-  styleUrl: './app.scss'
+  styleUrls: ['./app.scss']
 })
-export class App {
-  protected readonly title = signal('ClinicaOnline');
+export class AppComponent {
+  isMenuOpen = false;
+
+  constructor(private router: Router) {}
+
+  // Navegación real usando Router
+  navigateTo(page: string): void {
+    this.isMenuOpen = false;
+    this.router.navigate([`/${page}`]);
+  }
+
+  toggleMenu(): void {
+    this.isMenuOpen = !this.isMenuOpen;
+  }
 }

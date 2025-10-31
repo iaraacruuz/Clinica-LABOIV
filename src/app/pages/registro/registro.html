@@ -1,0 +1,138 @@
+<div class="registro-canil-wrapper">
+    <div class="registro-card">
+        <h2 class="titulo-principal text-center">
+            Registro de Usuarios
+        </h2>
+
+        <div class="mb-6 border-b pb-4">
+            <label class="block text-gray-700 text-sm font-bold mb-2">
+                Selecciona tu Perfil:
+            </label>
+            <div class="flex space-x-4 justify-center">
+                <button 
+                    (click)="seleccionarPerfil('paciente')"
+                    [ngClass]="{'btn-paciente active': perfilSeleccionado === 'paciente', 'bg-gray-200 text-gray-700': perfilSeleccionado !== 'paciente'}"
+                    class="btn-perfil py-2 px-4 rounded-lg font-semibold transition duration-300"
+                >
+                    Paciente
+                </button>
+                <button 
+                    (click)="seleccionarPerfil('especialista')"
+                    [ngClass]="{'btn-especialista active': perfilSeleccionado === 'especialista', 'bg-gray-200 text-gray-700': perfilSeleccionado !== 'especialista'}"
+                    class="btn-perfil py-2 px-4 rounded-lg font-semibold transition duration-300"
+                >
+                    Especialista
+                </button>
+            </div>
+            <p *ngIf="!perfilSeleccionado && c['mail'].touched && registroForm.invalid" class="text-red-500 text-xs mt-2 text-center font-bold">
+                Debe seleccionar un perfil para continuar.
+            </p>
+        </div>
+
+        <form [formGroup]="registroForm" (ngSubmit)="registrarUsuario()" *ngIf="perfilSeleccionado">
+            
+            <h3 class="subtitulo-seccion">Datos de Acceso y Personales</h3>
+            
+            <div class="grid md:grid-cols-2 md:gap-6">
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="mail">Mail</label>
+                    <input class="input-field shadow appearance-none w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="mail" type="email" formControlName="mail">
+                    <p *ngIf="c['mail'].invalid && c['mail'].touched" class="text-red-500 text-xs italic">Email inválido o requerido.</p>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="password">Contraseña</label>
+                    <input class="input-field shadow appearance-none w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="password" type="password" formControlName="password">
+                    <p *ngIf="c['password'].hasError('required') && c['password'].touched" class="text-red-500 text-xs italic">Contraseña requerida.</p>
+                    <p *ngIf="c['password'].hasError('minlength') && c['password'].touched" class="text-red-500 text-xs italic">Mínimo 6 caracteres.</p>
+                </div>
+            </div>
+            
+            <div class="grid md:grid-cols-2 md:gap-6">
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="nombre">Nombre</label>
+                    <input class="input-field shadow appearance-none w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="nombre" type="text" formControlName="nombre">
+                    <p *ngIf="c['nombre'].invalid && c['nombre'].touched" class="text-red-500 text-xs italic">Nombre requerido (solo letras).</p>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="apellido">Apellido</label>
+                    <input class="input-field shadow appearance-none w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="apellido" type="text" formControlName="apellido">
+                    <p *ngIf="c['apellido'].invalid && c['apellido'].touched" class="text-red-500 text-xs italic">Apellido requerido (solo letras).</p>
+                </div>
+            </div>
+            
+            <div class="grid md:grid-cols-2 md:gap-6">
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="edad">Edad</label>
+                    <input class="input-field shadow appearance-none w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="edad" type="number" formControlName="edad">
+                    <p *ngIf="c['edad'].invalid && c['edad'].touched" class="text-red-500 text-xs italic">Edad requerida (18-120).</p>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="dni">DNI</label>
+                    <input class="input-field shadow appearance-none w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="dni" type="text" formControlName="dni">
+                    <p *ngIf="c['dni'].invalid && c['dni'].touched" class="text-red-500 text-xs italic">DNI requerido (7-9 dígitos).</p>
+                </div>
+            </div>
+
+            <h3 class="subtitulo-seccion">Datos Específicos ({{ perfilSeleccionado | uppercase }})</h3>
+
+            <div class="mb-4" *ngIf="perfilSeleccionado === 'paciente'">
+                <label class="block text-gray-700 text-sm font-bold mb-2" for="obraSocial">Obra Social</label>
+                <input class="input-field shadow appearance-none w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="obraSocial" type="text" formControlName="obraSocial">
+                <p *ngIf="c['obraSocial'].invalid && c['obraSocial'].touched" class="text-red-500 text-xs italic">Obra Social requerida.</p>
+            </div>
+
+            <div class="mb-4" *ngIf="perfilSeleccionado === 'especialista'">
+                <label class="block text-gray-700 text-sm font-bold mb-2" for="especialidad">Especialidad</label>
+                <select 
+                    class="input-field shadow appearance-none w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" 
+                    id="especialidad" 
+                    formControlName="especialidad"
+                >
+                    <option [ngValue]="null" disabled>Selecciona una Especialidad</option>
+                    <option *ngFor="let esp of especialidadesDisponibles" [ngValue]="esp">{{ esp }}</option>
+                    <option value="otra">Otra (Especificar abajo)</option>
+                </select>
+                <p *ngIf="c['especialidad'].invalid && c['especialidad'].touched" class="text-red-500 text-xs italic">Especialidad requerida.</p>
+                
+                <div *ngIf="c['especialidad'].value === 'otra'" class="mt-2">
+                    <label class="block text-gray-700 text-sm mb-2" for="otraEspecialidad">Especificar Otra Especialidad</label>
+                    <input class="input-field shadow appearance-none w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="otraEspecialidad" type="text" formControlName="otraEspecialidad">
+                    <p *ngIf="c['otraEspecialidad']?.invalid && c['otraEspecialidad']?.touched" class="text-red-500 text-xs italic">Debe especificar la nueva especialidad.</p>
+                </div>
+            </div>
+            
+            <h3 class="subtitulo-seccion">Imágenes de Perfil</h3>
+
+            <div class="mb-4 file-upload-box" [ngClass]="{'file-upload-paciente': perfilSeleccionado === 'paciente'}">
+                <label class="block text-gray-700 text-sm font-bold mb-2" for="imagen1">Imagen de Perfil 1 (Frontal)</label>
+                <input class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-white file-input-style" id="imagen1" type="file" (change)="onFileSelected($event, 'imagenPerfil1')" accept="image/*">
+                <p *ngIf="c['imagenPerfil1'] && c['imagenPerfil1'].invalid && c['imagenPerfil1'].touched" class="text-red-500 text-xs italic mt-1">Imagen de Perfil 1 requerida.</p>
+            </div>
+            
+            <div class="mb-4 file-upload-box file-upload-paciente" *ngIf="perfilSeleccionado === 'paciente'">
+                <label class="block text-gray-700 text-sm font-bold mb-2" for="imagen2">Imagen de Perfil 2 (Lateral)</label>
+                <input class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-white file-input-style" id="imagen2" type="file" (change)="onFileSelected($event, 'imagenPerfil2')" accept="image/*">
+                <p *ngIf="c['imagenPerfil2'] && c['imagenPerfil2'].invalid && c['imagenPerfil2'].touched" class="text-red-500 text-xs italic mt-1">Imagen de Perfil 2 requerida.</p>
+            </div>
+
+            <p *ngIf="errorRegistro" class="text-red-600 text-center font-bold my-4 bg-red-100 p-2 rounded">{{ errorRegistro }}</p>
+            
+            <div class="flex items-center justify-center mt-6">
+                <button 
+                    [disabled]="registroForm.invalid || loading || !perfilSeleccionado"
+                    type="submit" 
+                    class="btn-registro font-bold py-2 px-6 rounded-xl focus:outline-none focus:shadow-outline transition duration-300 disabled:opacity-50"
+                >
+                    {{ loading ? 'Registrando...' : 'Registrarse y Enviar Verificación' }}
+                </button>
+            </div>
+            
+            <div *ngIf="loading" class="text-center mt-2 text-blue-600 font-semibold">
+                <div class="animate-spin inline-block w-4 h-4 border-2 border-current border-t-transparent rounded-full mr-2"></div>
+                Cargando...
+            </div>
+            
+            <p class="text-center text-sm text-gray-500 mt-4">¿Ya tienes cuenta? <a routerLink="/login" class="text-blue-600 hover:underline font-medium">Ingresa aquí</a></p>
+        </form>
+    </div>
+</div>
