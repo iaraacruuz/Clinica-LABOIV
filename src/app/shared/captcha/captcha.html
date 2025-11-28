@@ -1,0 +1,14 @@
+<div class="captcha-container">
+  <div class="captcha-label">Verificación de seguridad - Google reCAPTCHA</div>
+  
+  <div class="captcha-box">
+    <!-- Contenedor para Google reCAPTCHA -->
+    <div id="recaptcha-container"></div>
+    
+    <p *ngIf="!captchaReady" class="loading-message">Cargando verificación de seguridad...</p>
+  </div>
+
+  <div class="captcha-info">
+    <p>Completá la verificación de reCAPTCHA para continuar</p>
+  </div>
+</div>

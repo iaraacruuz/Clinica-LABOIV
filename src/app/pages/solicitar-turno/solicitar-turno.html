@@ -1,0 +1,175 @@
+<div class="solicitar-turno-container">
+  <h1 class="page-title">Solicitar Turno</h1>
+
+  <!-- Loading -->
+  <div *ngIf="loading" class="loading-container">
+    <div class="spinner"></div>
+    <p>Cargando datos...</p>
+  </div>
+
+  <!-- Formulario principal -->
+  <div *ngIf="!loading" class="appointment-form">
+    
+    <!-- Paso 1: Seleccionar Especialidad -->
+    <div class="form-step">
+      <h2>1. Seleccionar Especialidad</h2>
+      <div class="specialty-grid">
+        <div 
+          *ngFor="let specialty of specialties"
+          class="specialty-card"
+          [class.selected]="selectedSpecialtyId === specialty.id"
+          (click)="selectedSpecialtyId = specialty.id; onSpecialtyChange()"
+        >
+          <span class="specialty-icon">🏥</span>
+          <span class="specialty-name">{{ specialty.name }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Paso 2: Seleccionar Especialista -->
+    <div *ngIf="selectedSpecialtyId" class="form-step">
+      <h2>2. Seleccionar Especialista</h2>
+      
+      <div *ngIf="specialists.length === 0 && !loadingSlots" class="no-specialists">
+        <p>No hay especialistas disponibles para esta especialidad</p>
+      </div>
+      
+      <div *ngIf="loadingSlots" class="loading-specialists">
+        <div class="spinner-small"></div>
+        <span>Cargando especialistas...</span>
+      </div>
+      
+      <div class="specialist-grid">
+        <div 
+          *ngFor="let specialist of specialists"
+          class="specialist-card"
+          [class.selected]="selectedSpecialistId === specialist.id"
+          (click)="selectedSpecialistId = specialist.id; onSpecialistChange()"
+        >
+          <span class="specialist-icon">👨‍⚕️</span>
+          <div class="specialist-info">
+            <h3>{{ specialist.name }} {{ specialist.last_name }}</h3>
+            <p>{{ getSpecialtyName(selectedSpecialtyId) }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Paso 3: Seleccionar Paciente (solo admin) -->
+    <div *ngIf="isAdmin && selectedSpecialistId" class="form-step">
+      <h2>3. Seleccionar Paciente</h2>
+      <div class="form-group">
+        <select 
+          [(ngModel)]="selectedPatientId" 
+          class="patient-select"
+          required
+        >
+          <option value="">Seleccionar paciente...</option>
+          <option *ngFor="let patient of patients" [value]="patient.id">
+            {{ patient.name }} {{ patient.last_name }} - DNI: {{ patient.dni }}
+          </option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Paso 4: Seleccionar Horario -->
+    <div *ngIf="selectedSpecialistId && (!isAdmin || selectedPatientId)" class="form-step">
+      <h2>{{ isAdmin ? '4' : '3' }}. Seleccionar Horario</h2>
+      
+      <div *ngIf="loadingSlots" class="loading-slots">
+        <div class="spinner-small"></div>
+        <span>Cargando horarios disponibles...</span>
+      </div>
+      
+      <div *ngIf="!loadingSlots && availableSlots.length === 0" class="no-slots">
+        <p>No hay horarios disponibles para este especialista en los próximos {{ DAYS_AHEAD }} días</p>
+        <p class="clinic-hours-info">
+          <strong>Horarios de la clínica:</strong><br>
+          Lunes a Viernes: 8:00 - 19:00<br>
+          Sábados: 8:00 - 14:00<br>
+          Domingos: Cerrado
+        </p>
+      </div>
+      
+      <div *ngIf="!loadingSlots && availableSlots.length > 0" class="time-slots">
+        <div *ngFor="let dateGroup of getGroupedSlots() | keyvalue" class="date-group">
+          <h3 class="date-header">
+            {{ dateGroup.value[0].dayName | titlecase }}, {{ dateGroup.key }}
+          </h3>
+          
+          <div class="slots-grid">
+            <button 
+              *ngFor="let slot of dateGroup.value"
+              class="time-slot"
+              [class.selected]="selectedTimeSlot === slot"
+              [disabled]="!slot.available"
+              (click)="selectTimeSlot(slot)"
+            >
+              {{ slot.time }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Resumen y confirmación -->
+    <div *ngIf="selectedTimeSlot" class="confirmation-step">
+      <h2>Confirmar Turno</h2>
+      
+      <div class="appointment-summary">
+        <h3>Resumen del turno:</h3>
+        
+        <div class="summary-item">
+          <strong>Especialidad:</strong>
+          <span>{{ getSpecialtyName(selectedSpecialtyId!) }}</span>
+        </div>
+        
+        <div class="summary-item">
+          <strong>Especialista:</strong>
+          <span>{{ getSpecialistName(selectedSpecialistId) }}</span>
+        </div>
+        
+        <div class="summary-item" *ngIf="isAdmin">
+          <strong>Paciente:</strong>
+          <span>{{ getPatientName(selectedPatientId) }}</span>
+        </div>
+        
+        <div class="summary-item">
+          <strong>Fecha:</strong>
+          <span>{{ selectedTimeSlot.dayName | titlecase }}, {{ selectedTimeSlot.formattedDate }}</span>
+        </div>
+        
+        <div class="summary-item">
+          <strong>Horario:</strong>
+          <span>{{ selectedTimeSlot.time }} ({{ SLOT_DURATION }} minutos)</span>
+        </div>
+      </div>
+      
+      <div class="form-actions">
+        <button 
+          (click)="confirmAppointment()" 
+          class="btn btn-primary"
+          [disabled]="loading"
+        >
+          <span *ngIf="loading">Solicitando...</span>
+          <span *ngIf="!loading">Confirmar Turno</span>
+        </button>
+        
+        <button 
+          (click)="resetForm()" 
+          class="btn btn-secondary"
+          [disabled]="loading"
+        >
+          Cancelar
+        </button>
+      </div>
+      
+      <div class="appointment-note">
+        <p>
+          📋 <strong>Nota:</strong> Una vez solicitado, el turno quedará en estado "Pendiente" 
+          hasta que el especialista lo acepte. Recibirás una confirmación cuando esto ocurra.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>

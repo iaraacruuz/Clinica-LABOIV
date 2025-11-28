@@ -1,0 +1,528 @@
+.pacientes-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.page-title {
+  font-size: 2.5rem;
+  color: #2c3e50;
+  margin-bottom: 30px;
+  font-weight: 700;
+  text-align: center;
+}
+
+// ==================== LOADING ====================
+
+.loading-container {
+  text-align: center;
+  padding: 60px 20px;
+
+  .spinner {
+    width: 60px;
+    height: 60px;
+    border: 4px solid #f0f0f0;
+    border-top: 4px solid #3498db;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 20px;
+  }
+
+  p {
+    color: #666;
+    font-size: 1.1rem;
+    font-style: italic;
+  }
+}
+
+.spinner-small {
+  width: 20px;
+  height: 20px;
+  border: 2px solid #f0f0f0;
+  border-top: 2px solid #3498db;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  display: inline-block;
+  margin-right: 10px;
+  vertical-align: middle;
+}
+
+.loading-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 30px;
+  color: #666;
+  font-style: italic;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+// ==================== PATIENTS LIST ====================
+
+.patients-content {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 6px 30px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.no-patients {
+  text-align: center;
+  padding: 80px 20px;
+
+  h2 {
+    margin: 0 0 15px 0;
+    color: #3498db;
+    font-size: 2rem;
+  }
+
+  p {
+    margin: 10px 0;
+    color: #666;
+    font-size: 1.1rem;
+
+    &.note {
+      font-style: italic;
+      font-size: 0.95rem;
+      color: #999;
+    }
+  }
+}
+
+.patients-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 25px;
+  padding: 40px;
+}
+
+.patient-card {
+  background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+  border-radius: 16px;
+  padding: 30px;
+  border: 2px solid #dee2e6;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+
+  &:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 12px 40px rgba(52, 152, 219, 0.2);
+    border-color: #3498db;
+
+    .view-history-btn {
+      background: #3498db;
+      color: white;
+    }
+  }
+
+  .patient-icon {
+    width: 80px;
+    height: 80px;
+    background: linear-gradient(135deg, #3498db, #2980b9);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.5rem;
+    margin-bottom: 20px;
+  }
+
+  .patient-info {
+    width: 100%;
+    margin-bottom: 20px;
+
+    .patient-name {
+      margin: 0 0 15px 0;
+      color: #2c3e50;
+      font-size: 1.5rem;
+      font-weight: 700;
+    }
+
+    .patient-detail {
+      margin: 8px 0;
+      color: #555;
+      font-size: 0.95rem;
+      text-align: left;
+
+      .label {
+        font-weight: 600;
+        color: #3498db;
+      }
+    }
+  }
+
+  .view-history-btn {
+    background: white;
+    color: #3498db;
+    padding: 12px 25px;
+    border-radius: 8px;
+    font-weight: 600;
+    border: 2px solid #3498db;
+    transition: all 0.3s ease;
+    width: 100%;
+    text-align: center;
+  }
+}
+
+// ==================== MODALS ====================
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(5px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  width: 100%;
+  animation: modalFadeIn 0.3s ease;
+}
+
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// History Modal (List of Records)
+.history-modal {
+  max-width: 900px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+
+  .modal-header {
+    background: linear-gradient(135deg, #3498db, #2980b9);
+    color: white;
+    padding: 25px 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-radius: 16px 16px 0 0;
+    flex-shrink: 0;
+
+    h2 {
+      margin: 0;
+      font-size: 1.6rem;
+      font-weight: 600;
+    }
+
+    .btn-close {
+      background: rgba(255, 255, 255, 0.2);
+      color: white;
+      border: none;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      font-size: 1.5rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.3);
+        transform: rotate(90deg);
+      }
+    }
+  }
+
+  .modal-body {
+    padding: 30px;
+    overflow-y: auto;
+    flex: 1;
+  }
+
+  .empty-history {
+    text-align: center;
+    padding: 60px 20px;
+    color: #999;
+    font-style: italic;
+    font-size: 1.1rem;
+  }
+
+  .history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .history-item {
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    border-radius: 12px;
+    padding: 25px;
+    border: 2px solid #dee2e6;
+    cursor: pointer;
+    transition: all 0.3s ease;
+
+    &:hover {
+      transform: translateX(5px);
+      border-color: #3498db;
+      box-shadow: 0 6px 20px rgba(52, 152, 219, 0.15);
+    }
+
+    .history-date {
+      color: #3498db;
+      font-weight: 600;
+      font-size: 1rem;
+      margin-bottom: 12px;
+    }
+
+    .history-diagnosis {
+      color: #2c3e50;
+      margin-bottom: 12px;
+      line-height: 1.5;
+
+      strong {
+        color: #555;
+        font-size: 0.9rem;
+      }
+    }
+
+    .history-stats {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+
+      .stat {
+        background: white;
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        color: #555;
+        border: 1px solid #dee2e6;
+      }
+    }
+  }
+
+  .modal-footer {
+    padding: 20px 30px;
+    background: #f8f9fa;
+    border-radius: 0 0 16px 16px;
+    display: flex;
+    justify-content: flex-end;
+    border-top: 1px solid #dee2e6;
+    flex-shrink: 0;
+  }
+}
+
+// Detail Modal (Single Record)
+.detail-modal {
+  max-width: 800px;
+  max-height: 90vh;
+  overflow-y: auto;
+
+  .modal-header {
+    background: linear-gradient(135deg, #9b59b6, #8e44ad);
+    color: white;
+    padding: 25px 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-radius: 16px 16px 0 0;
+
+    h2 {
+      margin: 0;
+      font-size: 1.8rem;
+      font-weight: 600;
+    }
+
+    .btn-close {
+      background: rgba(255, 255, 255, 0.2);
+      color: white;
+      border: none;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      font-size: 1.5rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.3);
+        transform: rotate(90deg);
+      }
+    }
+  }
+
+  .modal-body {
+    padding: 30px;
+    background: white;
+  }
+
+  .detail-section {
+    margin-bottom: 30px;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+
+    h3 {
+      margin: 0 0 15px 0;
+      color: #2c3e50;
+      font-size: 1.3rem;
+      font-weight: 600;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #e0e0e0;
+    }
+  }
+
+  .detail-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+  }
+
+  .detail-item {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid #dee2e6;
+
+    .label {
+      display: block;
+      color: #666;
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      margin-bottom: 5px;
+    }
+
+    .value {
+      color: #2c3e50;
+      font-size: 1.1rem;
+      font-weight: 500;
+    }
+  }
+
+  .diagnosis-box,
+  .observations-box {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+    border-left: 4px solid #3498db;
+    color: #2c3e50;
+    line-height: 1.6;
+    font-size: 1rem;
+  }
+
+  .observations-box {
+    border-left-color: #9b59b6;
+  }
+
+  .modal-footer {
+    padding: 20px 30px;
+    background: #f8f9fa;
+    border-radius: 0 0 16px 16px;
+    display: flex;
+    justify-content: flex-end;
+    border-top: 1px solid #dee2e6;
+  }
+}
+
+// ==================== BUTTONS ====================
+
+.btn {
+  padding: 12px 25px;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 1rem;
+
+  &.btn-secondary {
+    background: #6c757d;
+    color: white;
+
+    &:hover {
+      background: #5a6268;
+      transform: translateY(-2px);
+    }
+  }
+}
+
+// ==================== RESPONSIVE ====================
+
+@media (max-width: 768px) {
+  .pacientes-container {
+    padding: 15px;
+  }
+
+  .page-title {
+    font-size: 2rem;
+    margin-bottom: 20px;
+  }
+
+  .patients-grid {
+    grid-template-columns: 1fr;
+    padding: 25px;
+    gap: 20px;
+  }
+
+  .patient-card {
+    padding: 25px;
+
+    .patient-icon {
+      width: 60px;
+      height: 60px;
+      font-size: 2rem;
+    }
+
+    .patient-info .patient-name {
+      font-size: 1.3rem;
+    }
+  }
+
+  .history-modal,
+  .detail-modal {
+    max-width: 95%;
+
+    .modal-header h2 {
+      font-size: 1.3rem;
+    }
+
+    .modal-body {
+      padding: 20px;
+    }
+  }
+
+  .detail-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .history-item {
+    padding: 20px;
+
+    .history-stats {
+      flex-direction: column;
+
+      .stat {
+        width: 100%;
+        text-align: center;
+      }
+    }
+  }
+}

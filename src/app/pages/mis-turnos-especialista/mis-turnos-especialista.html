@@ -1,0 +1,389 @@
+<div class="mis-turnos-container">
+  <h1 class="page-title">Mis Turnos - Especialista</h1>
+
+  <!-- Filtro Global -->
+  <div class="filters-section">
+    <div class="filter-group">
+      <label for="searchText">🔍 Buscar en turnos e historias clínicas:</label>
+      <input
+        type="text"
+        id="searchText"
+        [(ngModel)]="searchText"
+        (input)="onSearchChange()"
+        placeholder="Buscar por paciente, especialidad, fecha, diagnóstico, presión, etc..."
+        class="filter-input search-input"
+      />
+      <small class="filter-hint">
+        Podés buscar por cualquier campo: paciente, especialidad, estado, diagnóstico, altura, peso, temperatura, presión, o campos personalizados de la historia clínica.
+      </small>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div *ngIf="loading" class="loading-container">
+    <div class="spinner"></div>
+    <p>Cargando turnos...</p>
+  </div>
+
+  <!-- Lista de turnos -->
+  <div *ngIf="!loading && filteredAppointments.length === 0" class="no-appointments">
+    <p>No tienes turnos asignados</p>
+  </div>
+
+  <div *ngIf="!loading && filteredAppointments.length > 0" class="appointments-grid">
+    <div *ngFor="let appointment of filteredAppointments" class="appointment-card">
+      <!-- Header con estado -->
+      <div class="card-header">
+        <span class="status-badge" [ngClass]="getStatusClass(appointment.status_id)">
+          {{ getStatusText(appointment.status_id) }}
+        </span>
+        <span class="specialty-badge">{{ appointment.specialty_name }}</span>
+      </div>
+
+      <!-- Información del turno -->
+      <div class="card-body">
+        <div class="info-row">
+          <strong>Paciente:</strong>
+          <span>{{ appointment.patient_name }} {{ appointment.patient_last_name }}</span>
+        </div>
+
+        <div class="info-row">
+          <strong>Fecha y hora:</strong>
+          <span>{{ formatDate(appointment.appointment_date, appointment.appointment_time) }}</span>
+        </div>
+
+        <div class="info-row">
+          <strong>Duración:</strong>
+          <span>{{ appointment.duration_minutes }} minutos</span>
+        </div>
+
+        <!-- Motivo de cancelación si existe -->
+        <div *ngIf="appointment.cancellation_reason" class="info-row reason-row">
+          <strong>Motivo de cancelación:</strong>
+          <p>{{ appointment.cancellation_reason }}</p>
+        </div>
+
+        <!-- Motivo de rechazo si existe -->
+        <div *ngIf="appointment.rejection_reason" class="info-row reason-row">
+          <strong>Motivo de rechazo:</strong>
+          <p>{{ appointment.rejection_reason }}</p>
+        </div>
+      </div>
+
+      <!-- Acciones -->
+      <div class="card-actions">
+        <button
+          *ngIf="canAccept(appointment)"
+          (click)="openAcceptModal(appointment)"
+          class="btn btn-accept"
+        >
+          ✓ Aceptar Turno
+        </button>
+
+        <button
+          *ngIf="canReject(appointment)"
+          (click)="openRejectModal(appointment)"
+          class="btn btn-reject"
+        >
+          ✗ Rechazar Turno
+        </button>
+
+        <button
+          *ngIf="canCancel(appointment)"
+          (click)="openCancelModal(appointment)"
+          class="btn btn-cancel"
+        >
+          🚫 Cancelar Turno
+        </button>
+
+        <button
+          *ngIf="canComplete(appointment)"
+          (click)="openCompleteModal(appointment)"
+          class="btn btn-complete"
+        >
+          ✔️ Finalizar Turno
+        </button>
+
+        <button
+          *ngIf="canViewReview(appointment)"
+          (click)="openReviewModal(appointment)"
+          class="btn btn-review"
+        >
+          📋 Ver Reseña
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Aceptar Turno -->
+  <div *ngIf="showAcceptModal" class="modal-overlay" (click)="closeAcceptModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <h2>Aceptar Turno</h2>
+      <p>¿Estás seguro que querés aceptar este turno?</p>
+      
+      <div class="appointment-summary" *ngIf="selectedAppointment">
+        <p><strong>Paciente:</strong> {{ selectedAppointment.patient_name }} {{ selectedAppointment.patient_last_name }}</p>
+        <p><strong>Fecha:</strong> {{ formatDate(selectedAppointment.appointment_date, selectedAppointment.appointment_time) }}</p>
+        <p><strong>Especialidad:</strong> {{ selectedAppointment.specialty_name }}</p>
+      </div>
+
+      <div class="modal-actions">
+        <button (click)="confirmAccept()" class="btn btn-primary">Sí, Aceptar</button>
+        <button (click)="closeAcceptModal()" class="btn btn-secondary">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Rechazar Turno -->
+  <div *ngIf="showRejectModal" class="modal-overlay" (click)="closeRejectModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <h2>Rechazar Turno</h2>
+      <p>Por favor, indicá el motivo del rechazo:</p>
+
+      <div class="form-group">
+        <label for="rejectionReason">Motivo del rechazo *</label>
+        <textarea
+          id="rejectionReason"
+          [(ngModel)]="rejectionReason"
+          rows="4"
+          placeholder="Ej: No tengo disponibilidad en ese horario..."
+          required
+        ></textarea>
+      </div>
+
+      <div class="modal-actions">
+        <button 
+          (click)="confirmReject()" 
+          class="btn btn-primary"
+          [disabled]="!rejectionReason.trim()"
+        >
+          Confirmar Rechazo
+        </button>
+        <button (click)="closeRejectModal()" class="btn btn-secondary">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Cancelar Turno -->
+  <div *ngIf="showCancelModal" class="modal-overlay" (click)="closeCancelModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <h2>Cancelar Turno</h2>
+      <p>Por favor, indicá el motivo de la cancelación:</p>
+
+      <div class="form-group">
+        <label for="cancellationReason">Motivo de la cancelación *</label>
+        <textarea
+          id="cancellationReason"
+          [(ngModel)]="cancellationReason"
+          rows="4"
+          placeholder="Ej: Emergencia personal..."
+          required
+        ></textarea>
+      </div>
+
+      <div class="modal-actions">
+        <button 
+          (click)="confirmCancel()" 
+          class="btn btn-primary"
+          [disabled]="!cancellationReason.trim()"
+        >
+          Confirmar Cancelación
+        </button>
+        <button (click)="closeCancelModal()" class="btn btn-secondary">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Finalizar Turno con Historia Clínica -->
+  <div *ngIf="showMedicalHistoryModal" class="modal-overlay" (click)="closeCompleteModal()">
+    <div class="modal-content medical-history-modal" (click)="$event.stopPropagation()">
+      <h2>📋 Completar Historia Clínica</h2>
+      <p class="modal-subtitle">Paciente: <strong>{{ selectedAppointment?.patient_name }} {{ selectedAppointment?.patient_last_name }}</strong></p>
+
+      <div class="medical-form">
+        <!-- Datos básicos -->
+        <div class="form-section">
+          <h3>Datos Físicos</h3>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="height">Altura (cm)</label>
+              <input
+                type="number"
+                id="height"
+                [(ngModel)]="medicalHistory.height"
+                placeholder="Ej: 170"
+                min="0"
+                step="0.1"
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="weight">Peso (kg)</label>
+              <input
+                type="number"
+                id="weight"
+                [(ngModel)]="medicalHistory.weight"
+                placeholder="Ej: 70"
+                min="0"
+                step="0.1"
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="temperature">Temperatura (°C)</label>
+              <input
+                type="number"
+                id="temperature"
+                [(ngModel)]="medicalHistory.temperature"
+                placeholder="Ej: 36.5"
+                min="35"
+                max="42"
+                step="0.1"
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="pressure">Presión Arterial</label>
+              <input
+                type="text"
+                id="pressure"
+                [(ngModel)]="medicalHistory.pressure"
+                placeholder="Ej: 120/80"
+              />
+            </div>
+          </div>
+        </div>
+
+        <!-- Diagnóstico y observaciones -->
+        <div class="form-section">
+          <h3>Diagnóstico *</h3>
+          <div class="form-group">
+            <textarea
+              id="diagnosis"
+              [(ngModel)]="medicalHistory.diagnosis"
+              rows="4"
+              placeholder="Diagnóstico médico..."
+              required
+            ></textarea>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h3>Observaciones</h3>
+          <div class="form-group">
+            <textarea
+              id="observations"
+              [(ngModel)]="medicalHistory.observations"
+              rows="3"
+              placeholder="Observaciones adicionales, tratamiento sugerido, etc..."
+            ></textarea>
+          </div>
+        </div>
+
+        <!-- Campos adicionales dinámicos -->
+        <div class="form-section">
+          <h3>Datos Adicionales (Opcional)</h3>
+          <small>Hasta 3 campos personalizados</small>
+
+          <div class="form-row additional-field">
+            <div class="form-group">
+              <input
+                type="text"
+                [(ngModel)]="medicalHistory.additionalField1Key"
+                placeholder="Campo (Ej: Alergias)"
+              />
+            </div>
+            <div class="form-group">
+              <input
+                type="text"
+                [(ngModel)]="medicalHistory.additionalField1Value"
+                placeholder="Valor"
+              />
+            </div>
+          </div>
+
+          <div class="form-row additional-field">
+            <div class="form-group">
+              <input
+                type="text"
+                [(ngModel)]="medicalHistory.additionalField2Key"
+                placeholder="Campo (Ej: Medicación actual)"
+              />
+            </div>
+            <div class="form-group">
+              <input
+                type="text"
+                [(ngModel)]="medicalHistory.additionalField2Value"
+                placeholder="Valor"
+              />
+            </div>
+          </div>
+
+          <div class="form-row additional-field">
+            <div class="form-group">
+              <input
+                type="text"
+                [(ngModel)]="medicalHistory.additionalField3Key"
+                placeholder="Campo (Ej: Antecedentes)"
+              />
+            </div>
+            <div class="form-group">
+              <input
+                type="text"
+                [(ngModel)]="medicalHistory.additionalField3Value"
+                placeholder="Valor"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button 
+          (click)="confirmComplete()" 
+          class="btn btn-primary"
+          [disabled]="!medicalHistory.diagnosis.trim() || loading"
+        >
+          {{ loading ? 'Guardando...' : 'Finalizar y Guardar' }}
+        </button>
+        <button (click)="closeCompleteModal()" class="btn btn-secondary" [disabled]="loading">
+          Cancelar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Ver Reseña -->
+  <div *ngIf="showReviewModal" class="modal-overlay" (click)="closeReviewModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <h2>Reseña de la Consulta</h2>
+      
+      <div class="review-content" *ngIf="selectedAppointment">
+        <p><strong>Paciente:</strong> {{ selectedAppointment.patient_name }} {{ selectedAppointment.patient_last_name }}</p>
+        <p><strong>Fecha:</strong> {{ formatDate(selectedAppointment.appointment_date, selectedAppointment.appointment_time) }}</p>
+        
+        <div class="review-text">
+          <h3>Diagnóstico y observaciones:</h3>
+          <p>{{ selectedAppointment.specialist_review }}</p>
+        </div>
+
+        <div *ngIf="selectedAppointment.patient_feedback" class="patient-feedback">
+          <h3>Comentario del paciente:</h3>
+          <p>{{ selectedAppointment.patient_feedback }}</p>
+          <div *ngIf="selectedAppointment.patient_rating" class="rating-display">
+            <span class="stars">
+              <span *ngFor="let star of [1,2,3,4,5]" 
+                    [class.filled]="star <= (selectedAppointment.patient_rating || 0)">
+                ★
+              </span>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button (click)="closeReviewModal()" class="btn btn-secondary">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>

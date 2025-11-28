@@ -1,0 +1,282 @@
+<div class="dashboard-container">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <img src="clinic-icon.svg" alt="Clínica" class="navbar-logo" />
+      <div class="brand-text">
+        <h1>Clínica Online</h1>
+        <span class="role-badge">{{ getRoleLabel() }}</span>
+      </div>
+    </div>
+    <div class="navbar-actions">
+      <span *ngIf="currentUser" class="user-info">
+        👤 {{ currentUser.name }} {{ currentUser.last_name }}
+      </span>
+      <button (click)="requestLogout()" class="btn btn-logout">Cerrar sesión</button>
+    </div>
+  </nav>
+
+  <div class="dashboard-main">
+    <!-- Sidebar Navigation -->
+    <div class="sidebar">
+      <button 
+        (click)="setActiveSection('home')"
+        [class.active]="activeSection === 'home'"
+        class="nav-button"
+      >
+        🏠 Inicio
+      </button>
+
+      <!-- Admin menu -->
+      <ng-container *ngIf="currentUser?.role === 'admin'">
+        <button 
+          (click)="setActiveSection('especialistas')"
+          [class.active]="activeSection === 'especialistas'"
+          class="nav-button"
+        >
+          👨‍⚕️ Gestionar Especialistas
+        </button>
+        <button 
+          (click)="setActiveSection('usuarios')"
+          [class.active]="activeSection === 'usuarios'"
+          class="nav-button"
+        >
+          👥 Todos los Usuarios
+        </button>
+        <button 
+          (click)="setActiveSection('turnos-admin')"
+          [class.active]="activeSection === 'turnos-admin'"
+          class="nav-button"
+        >
+          📅 Turnos (Admin)
+        </button>
+        <button 
+          (click)="setActiveSection('solicitar-turno')"
+          [class.active]="activeSection === 'solicitar-turno'"
+          class="nav-button"
+        >
+          ➕ Solicitar Turno
+        </button>
+        <button 
+          (click)="setActiveSection('estadisticas')"
+          [class.active]="activeSection === 'estadisticas'"
+          class="nav-button"
+        >
+          📈 Estadísticas
+        </button>
+      </ng-container>
+
+      <!-- Specialist menu -->
+      <ng-container *ngIf="currentUser?.role === 'specialist'">
+        <button 
+          (click)="setActiveSection('turnos')"
+          [class.active]="activeSection === 'turnos'"
+          class="nav-button"
+        >
+          📅 Mis Turnos
+        </button>
+        <button 
+          (click)="setActiveSection('pacientes')"
+          [class.active]="activeSection === 'pacientes'"
+          class="nav-button"
+        >
+          👥 Mis Pacientes
+        </button>
+        <button 
+          (click)="setActiveSection('perfil')"
+          [class.active]="activeSection === 'perfil'"
+          class="nav-button"
+        >
+          ⚙️ Mi Perfil
+        </button>
+      </ng-container>
+
+      <!-- Patient menu -->
+      <ng-container *ngIf="currentUser?.role === 'patient'">
+        <button 
+          (click)="setActiveSection('turnos')"
+          [class.active]="activeSection === 'turnos'"
+          class="nav-button"
+        >
+          📅 Mis Turnos
+        </button>
+        <button 
+          (click)="setActiveSection('solicitar-turno')"
+          [class.active]="activeSection === 'solicitar-turno'"
+          class="nav-button"
+        >
+          ➕ Solicitar Turno
+        </button>
+        <button 
+          (click)="setActiveSection('perfil')"
+          [class.active]="activeSection === 'perfil'"
+          class="nav-button"
+        >
+          ⚙️ Mi Perfil
+        </button>
+      </ng-container>
+    </div>
+
+    <!-- Main Content -->
+    <div class="content">
+      <!-- HOME SECTION -->
+      <div *ngIf="activeSection === 'home'" class="section" @slideInUp>
+        <div class="welcome-card">
+          <h2>¡Bienvenido/a, {{ currentUser?.name }}! 👋</h2>
+          
+          <div *ngIf="currentUser?.role === 'admin'" class="welcome-content">
+            <p class="subtitle">Panel de Administración</p>
+            <p>Desde aquí podés gestionar especialistas, pacientes y ver estadísticas del sistema.</p>
+
+            <div class="stats-grid" *ngIf="!loading">
+              <div class="stat-card" @fadeIn>
+                <div class="stat-icon">👨‍⚕️</div>
+                <h3>Especialistas Totales</h3>
+                <p class="stat-number">{{ stats.totalSpecialists }}</p>
+              </div>
+              <div class="stat-card warning" @fadeIn>
+                <div class="stat-icon">⏳</div>
+                <h3>Pendientes de Aprobación</h3>
+                <p class="stat-number">{{ stats.pendingSpecialists }}</p>
+              </div>
+              <div class="stat-card success" @fadeIn>
+                <div class="stat-icon">✅</div>
+                <h3>Especialistas Aprobados</h3>
+                <p class="stat-number">{{ stats.approvedSpecialists }}</p>
+              </div>
+              <div class="stat-card info" @fadeIn>
+                <div class="stat-icon">👥</div>
+                <h3>Pacientes Registrados</h3>
+                <p class="stat-number">{{ stats.totalPatients }}</p>
+              </div>
+            </div>
+
+            <p *ngIf="loading" class="loading-message">Cargando estadísticas...</p>
+
+            <div *ngIf="!loading" class="quick-actions">
+              <div class="action-card" (click)="setActiveSection('especialistas')">
+                <div class="action-icon">👨‍⚕️</div>
+                <h3>Gestionar Especialistas</h3>
+                <p>Aprobar y crear especialistas</p>
+              </div>
+              <div class="action-card" (click)="setActiveSection('turnos-admin')">
+                <div class="action-icon">📅</div>
+                <h3>Ver Turnos</h3>
+                <p>Administrar todos los turnos</p>
+              </div>
+              <div class="action-card" (click)="setActiveSection('solicitar-turno')">
+                <div class="action-icon">➕</div>
+                <h3>Solicitar Turno</h3>
+                <p>Crear turnos para pacientes</p>
+              </div>
+            </div>
+          </div>
+
+          <div *ngIf="currentUser?.role === 'specialist'" class="welcome-content">
+            <p class="subtitle">Portal del Especialista</p>
+            <p>Gestioná tus turnos, horarios y consultas de pacientes desde esta plataforma.</p>
+            
+            <div class="quick-actions">
+              <div class="action-card" (click)="setActiveSection('turnos')">
+                <div class="action-icon">📅</div>
+                <h3>Ver Turnos</h3>
+                <p>Consultá y gestioná tus turnos programados</p>
+              </div>
+              <div class="action-card" (click)="setActiveSection('perfil')">
+                <div class="action-icon">⚙️</div>
+                <h3>Configurar Perfil</h3>
+                <p>Actualizá tu información y disponibilidad</p>
+              </div>
+            </div>
+          </div>
+
+          <div *ngIf="currentUser?.role === 'patient'" class="welcome-content">
+            <p class="subtitle">Portal del Paciente</p>
+            <p>Gestioná tus turnos con especialistas y accedé a tu historial médico.</p>
+            
+            <div class="quick-actions">
+              <div class="action-card" (click)="setActiveSection('turnos')">
+                <div class="action-icon">📅</div>
+                <h3>Mis Turnos</h3>
+                <p>Consultá y gestioná tus turnos programados</p>
+              </div>
+              <div class="action-card" (click)="setActiveSection('solicitar-turno')">
+                <div class="action-icon">➕</div>
+                <h3>Solicitar Turno</h3>
+                <p>Reservá un turno con un especialista</p>
+              </div>
+              <div class="action-card" (click)="setActiveSection('perfil')">
+                <div class="action-icon">⚙️</div>
+                <h3>Mi Perfil</h3>
+                <p>Visualizá y actualizá tus datos personales</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ESPECIALISTAS SECTION (Admin only) -->
+      <div *ngIf="activeSection === 'especialistas' && currentUser?.role === 'admin'" class="section">
+        <app-aprobar-especialistas></app-aprobar-especialistas>
+      </div>
+
+      <!-- ESTADISTICAS SECTION (Admin only) -->
+      <div *ngIf="activeSection === 'estadisticas' && currentUser?.role === 'admin'" class="section">
+        <div class="content-card">
+          <h2>📊 Estadísticas del Sistema</h2>
+          <div class="placeholder">
+            <p>Sección en desarrollo. Aquí se mostrarán gráficos y reportes detallados.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- USUARIOS SECTION (Admin only) -->
+      <div *ngIf="activeSection === 'usuarios' && currentUser?.role === 'admin'" class="section" @slideInUp>
+        <app-usuarios-admin></app-usuarios-admin>
+      </div>
+
+      <!-- TURNOS ADMIN SECTION (Admin only) -->
+      <div *ngIf="activeSection === 'turnos-admin' && currentUser?.role === 'admin'" class="section" @slideInUp>
+        <app-turnos-admin></app-turnos-admin>
+      </div>
+
+      <!-- SOLICITAR TURNO SECTION -->
+      <div *ngIf="activeSection === 'solicitar-turno'" class="section" @slideInUp>
+        <app-solicitar-turno></app-solicitar-turno>
+      </div>
+
+      <!-- TURNOS SECTION -->
+      <div *ngIf="activeSection === 'turnos'" class="section" @slideInUp>
+        <!-- Para pacientes: mostrar Mis Turnos -->
+        <div *ngIf="currentUser?.role === 'patient'" class="full-width-section">
+          <app-mis-turnos></app-mis-turnos>
+        </div>
+        
+        <!-- Para especialistas: mostrar Mis Turnos Especialista -->
+        <div *ngIf="currentUser?.role === 'specialist'" class="full-width-section">
+          <app-mis-turnos-especialista></app-mis-turnos-especialista>
+        </div>
+      </div>
+
+      <!-- PACIENTES SECTION (ESPECIALISTA) -->
+      <div *ngIf="activeSection === 'pacientes'" class="section" @slideInUp>
+        <app-pacientes-especialista></app-pacientes-especialista>
+      </div>
+
+      <!-- PERFIL SECTION -->
+      <div *ngIf="activeSection === 'perfil'" class="section" @slideInUp>
+        <app-mi-perfil></app-mi-perfil>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal de confirmación de cierre de sesión -->
+<app-confirmation-modal
+  [isVisible]="showLogoutConfirmation"
+  [title]="'¿Cerrar sesión?'"
+  [message]="'¿Estás seguro que deseas cerrar sesión?'"
+  [confirmText]="'Sí, cerrar sesión'"
+  [cancelText]="'Cancelar'"
+  (onConfirm)="confirmLogout()"
+  (onCancel)="cancelLogout()">
+</app-confirmation-modal>

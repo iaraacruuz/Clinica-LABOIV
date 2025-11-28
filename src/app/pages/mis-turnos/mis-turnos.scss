@@ -1,0 +1,490 @@
+.mis-turnos-container {
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+
+  h1 {
+    color: #333;
+    margin-bottom: 2rem;
+    font-size: 2rem;
+  }
+}
+
+// ==================== FILTROS ====================
+
+.filters-section {
+  background: #f8f9fa;
+  padding: 1.5rem;
+  border-radius: 8px;
+  margin-bottom: 2rem;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+
+  .filter-group {
+    display: flex;
+    flex-direction: column;
+
+    label {
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      color: #555;
+      font-size: 1.1rem;
+    }
+
+    .filter-input {
+      padding: 0.75rem;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 1rem;
+
+      &:focus {
+        outline: none;
+        border-color: #4CAF50;
+        box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.1);
+      }
+    }
+
+    .search-input {
+      padding: 1rem;
+      font-size: 1.05rem;
+      border: 2px solid #ddd;
+
+      &:focus {
+        border-color: #2196F3;
+        box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.15);
+      }
+    }
+
+    .filter-hint {
+      margin-top: 0.5rem;
+      color: #666;
+      font-size: 0.875rem;
+      line-height: 1.4;
+    }
+  }
+}
+
+// ==================== LISTA ====================
+
+.loading {
+  text-align: center;
+  padding: 3rem;
+  color: #666;
+  font-size: 1.1rem;
+}
+
+.no-appointments {
+  text-align: center;
+  padding: 3rem;
+  color: #888;
+  font-size: 1.1rem;
+}
+
+.appointments-list {
+  display: grid;
+  gap: 1.5rem;
+
+  .appointment-card {
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: box-shadow 0.3s ease;
+
+    &:hover {
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    }
+
+    .appointment-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+      padding-bottom: 1rem;
+      border-bottom: 2px solid #f0f0f0;
+
+      h3 {
+        margin: 0;
+        color: #2c3e50;
+        font-size: 1.3rem;
+      }
+
+      .status-badge {
+        padding: 0.4rem 0.8rem;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        text-transform: uppercase;
+
+        &.status-pending {
+          background: #fff3cd;
+          color: #856404;
+        }
+
+        &.status-accepted {
+          background: #d1ecf1;
+          color: #0c5460;
+        }
+
+        &.status-rejected {
+          background: #f8d7da;
+          color: #721c24;
+        }
+
+        &.status-cancelled {
+          background: #e2e3e5;
+          color: #383d41;
+        }
+
+        &.status-completed {
+          background: #d4edda;
+          color: #155724;
+        }
+
+        &.status-no-show {
+          background: #fff3cd;
+          color: #856404;
+          border: 1px dashed #ffc107;
+        }
+      }
+    }
+
+    .appointment-details {
+      margin-bottom: 1rem;
+
+      p {
+        margin: 0.5rem 0;
+        color: #555;
+        line-height: 1.6;
+
+        strong {
+          color: #333;
+          font-weight: 600;
+        }
+      }
+
+      .cancellation-info,
+      .rejection-info {
+        background: #fff3cd;
+        padding: 0.75rem;
+        border-radius: 4px;
+        margin-top: 0.75rem;
+
+        p {
+          margin: 0;
+          color: #856404;
+        }
+      }
+
+      .rejection-info {
+        background: #f8d7da;
+        
+        p {
+          color: #721c24;
+        }
+      }
+
+      .rating-info {
+        background: #d4edda;
+        padding: 0.75rem;
+        border-radius: 4px;
+        margin-top: 0.75rem;
+
+        p {
+          margin: 0;
+          color: #155724;
+        }
+      }
+    }
+
+    .appointment-actions {
+      display: flex;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+  }
+}
+
+// ==================== BOTONES ====================
+
+.btn {
+  padding: 0.6rem 1.2rem;
+  border: none;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+
+  &.btn-primary {
+    background: #4CAF50;
+    color: white;
+
+    &:hover {
+      background: #45a049;
+    }
+  }
+
+  &.btn-danger {
+    background: #f44336;
+    color: white;
+
+    &:hover {
+      background: #da190b;
+    }
+  }
+
+  &.btn-warning {
+    background: #ff9800;
+    color: white;
+
+    &:hover {
+      background: #e68900;
+    }
+  }
+
+  &.btn-info {
+    background: #2196F3;
+    color: white;
+
+    &:hover {
+      background: #0b7dda;
+    }
+  }
+
+  &.btn-secondary {
+    background: #6c757d;
+    color: white;
+
+    &:hover {
+      background: #5a6268;
+    }
+  }
+}
+
+// ==================== MODALES ====================
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 8px;
+  padding: 2rem;
+  max-width: 500px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+
+  &.survey-modal {
+    max-width: 600px;
+  }
+
+  h2 {
+    margin-top: 0;
+    margin-bottom: 1.5rem;
+    color: #333;
+    font-size: 1.5rem;
+  }
+
+  .form-group {
+    margin-bottom: 1.5rem;
+
+    label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 600;
+      color: #555;
+    }
+
+    .form-control {
+      width: 100%;
+      padding: 0.75rem;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 1rem;
+      font-family: inherit;
+
+      &:focus {
+        outline: none;
+        border-color: #4CAF50;
+        box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.1);
+      }
+    }
+
+    textarea.form-control {
+      resize: vertical;
+      min-height: 100px;
+    }
+  }
+
+  .modal-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+    margin-top: 2rem;
+  }
+}
+
+// Reseña
+.review-content {
+  .review-text {
+    background: #f8f9fa;
+    padding: 1rem;
+    border-radius: 4px;
+    margin-top: 1rem;
+
+    h3 {
+      margin-top: 0;
+      margin-bottom: 0.75rem;
+      font-size: 1.1rem;
+      color: #333;
+    }
+
+    p {
+      margin: 0;
+      line-height: 1.6;
+      color: #555;
+      white-space: pre-wrap;
+    }
+  }
+}
+
+// Encuesta
+.survey-modal {
+  max-width: 650px;
+}
+
+.survey-intro {
+  color: #666;
+  font-size: 0.95rem;
+  margin-bottom: 1.5rem;
+  font-style: italic;
+}
+
+.survey-form {
+  .form-group {
+    label {
+      font-size: 0.95rem;
+      color: #333;
+    }
+  }
+}
+
+// Calificación
+.rating-section {
+  text-align: center;
+  margin-bottom: 1.5rem;
+
+  .stars {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    margin: 1rem 0;
+
+    .star {
+      font-size: 2.5rem;
+      cursor: pointer;
+      opacity: 0.3;
+      transition: all 0.2s ease;
+
+      &:hover {
+        transform: scale(1.2);
+        opacity: 0.6;
+      }
+
+      &.selected {
+        opacity: 1;
+      }
+    }
+  }
+
+  .rating-value {
+    font-weight: 600;
+    color: #4CAF50;
+    margin-top: 0.5rem;
+  }
+}
+
+// Encuesta
+.survey-form {
+  .form-group {
+    label {
+      font-size: 0.95rem;
+    }
+  }
+}
+
+// ==================== RESPONSIVE ====================
+
+@media (max-width: 768px) {
+  .mis-turnos-container {
+    padding: 1rem;
+
+    h1 {
+      font-size: 1.5rem;
+    }
+  }
+
+  .filters-section {
+    grid-template-columns: 1fr;
+  }
+
+  .appointment-card {
+    .appointment-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.75rem;
+    }
+
+    .appointment-actions {
+      flex-direction: column;
+
+      .btn {
+        width: 100%;
+      }
+    }
+  }
+
+  .modal-content {
+    padding: 1.5rem;
+    margin: 1rem;
+
+    .modal-actions {
+      flex-direction: column;
+
+      .btn {
+        width: 100%;
+      }
+    }
+  }
+
+  .rating-section .stars {
+    .star {
+      font-size: 2rem;
+    }
+  }
+}

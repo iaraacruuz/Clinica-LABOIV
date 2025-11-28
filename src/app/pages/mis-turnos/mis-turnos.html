@@ -1,0 +1,255 @@
+<div class="mis-turnos-container">
+  <h1>Mis Turnos</h1>
+
+  <!-- Filtro Global -->
+  <div class="filters-section">
+    <div class="filter-group">
+      <label for="searchText">🔍 Buscar en turnos e historias clínicas:</label>
+      <input 
+        type="text" 
+        id="searchText"
+        [(ngModel)]="searchText"
+        (input)="applyFilters()"
+        placeholder="Buscar por especialidad, especialista, fecha, diagnóstico, presión, etc..."
+        class="filter-input search-input">
+      <small class="filter-hint">
+        Podés buscar por cualquier campo: especialidad, especialista, estado, diagnóstico, altura, peso, temperatura, presión, o campos personalizados de la historia clínica.
+      </small>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div *ngIf="loading" class="loading">
+    <p>Cargando turnos...</p>
+  </div>
+
+  <!-- Lista de turnos -->
+  <div *ngIf="!loading && filteredAppointments.length > 0" class="appointments-list">
+    <div *ngFor="let appointment of filteredAppointments" class="appointment-card">
+      <div class="appointment-header">
+        <h3>{{ appointment.specialty_name }}</h3>
+        <span [class]="getStatusClass(appointment.status_id)" class="status-badge">
+          {{ getStatusText(appointment) }}
+        </span>
+      </div>
+
+      <div class="appointment-details">
+        <p><strong>Especialista:</strong> Dr/a. {{ appointment.specialist_name }} {{ appointment.specialist_last_name }}</p>
+        <p><strong>Fecha:</strong> {{ formatDate(appointment.appointment_date) }}</p>
+        <p><strong>Hora:</strong> {{ formatTime(appointment.appointment_time || '') }}</p>
+        <p><strong>Duración:</strong> {{ appointment.duration_minutes }} minutos</p>
+        
+        <div *ngIf="appointment.cancellation_reason" class="cancellation-info">
+          <p><strong>Motivo de cancelación:</strong> {{ appointment.cancellation_reason }}</p>
+        </div>
+
+        <div *ngIf="appointment.rejection_reason" class="rejection-info">
+          <p><strong>Motivo de rechazo:</strong> {{ appointment.rejection_reason }}</p>
+        </div>
+
+        <div *ngIf="appointment.patient_rating" class="rating-info">
+          <p><strong>Tu calificación:</strong> {{ appointment.patient_rating }} ⭐</p>
+          <p *ngIf="appointment.patient_feedback"><strong>Tu comentario:</strong> {{ appointment.patient_feedback }}</p>
+        </div>
+
+        <div *ngIf="appointment.survey_completed" class="survey-info">
+          <p><strong>✓ Encuesta completada</strong></p>
+        </div>
+      </div>
+
+      <div class="appointment-actions">
+        <button 
+          *ngIf="canCancel(appointment)"
+          (click)="openCancelModal(appointment)"
+          class="btn btn-danger">
+          Cancelar Turno
+        </button>
+
+        <button 
+          *ngIf="canViewReview(appointment)"
+          (click)="openReviewModal(appointment)"
+          class="btn btn-info">
+          Ver Reseña
+        </button>
+
+        <button 
+          *ngIf="canCompleteSurvey(appointment)"
+          (click)="openSurveyModal(appointment)"
+          class="btn btn-primary">
+          Completar Encuesta
+        </button>
+
+        <button 
+          *ngIf="canRate(appointment)"
+          (click)="openRatingModal(appointment)"
+          class="btn btn-warning">
+          Calificar Atención
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sin turnos -->
+  <div *ngIf="!loading && filteredAppointments.length === 0" class="no-appointments">
+    <p *ngIf="appointments.length === 0">No tienes turnos registrados</p>
+    <p *ngIf="appointments.length > 0 && filteredAppointments.length === 0">
+      No se encontraron turnos con los filtros aplicados
+    </p>
+  </div>
+</div>
+
+<!-- Modal Cancelar Turno -->
+<div *ngIf="showCancelModal" class="modal-overlay" (click)="closeCancelModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <h2>Cancelar Turno</h2>
+    <p>¿Está seguro que desea cancelar este turno?</p>
+    
+    <div class="form-group">
+      <label for="cancellationReason">Motivo de cancelación *</label>
+      <textarea 
+        id="cancellationReason"
+        [(ngModel)]="cancellationReason"
+        rows="4"
+        placeholder="Ingrese el motivo de la cancelación"
+        class="form-control"></textarea>
+    </div>
+
+    <div class="modal-actions">
+      <button (click)="closeCancelModal()" class="btn btn-secondary">Cerrar</button>
+      <button (click)="confirmCancel()" class="btn btn-danger">Confirmar Cancelación</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Ver Reseña -->
+<div *ngIf="showReviewModal" class="modal-overlay" (click)="closeReviewModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <h2>Reseña del Especialista</h2>
+    
+    <div class="review-content">
+      <p><strong>Especialista:</strong> Dr/a. {{ selectedAppointment?.specialist_name }} {{ selectedAppointment?.specialist_last_name }}</p>
+      <p><strong>Fecha:</strong> {{ formatDate(selectedAppointment?.appointment_date || '') }}</p>
+      <p><strong>Hora:</strong> {{ formatTime(selectedAppointment?.appointment_time || '') }}</p>
+      
+      <div class="review-text">
+        <h3>Diagnóstico y Observaciones:</h3>
+        <p>{{ selectedAppointment?.specialist_review }}</p>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button (click)="closeReviewModal()" class="btn btn-primary">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Encuesta -->
+<div *ngIf="showSurveyModal" class="modal-overlay" (click)="closeSurveyModal()">
+  <div class="modal-content survey-modal" (click)="$event.stopPropagation()">
+    <h2>Encuesta de Satisfacción</h2>
+    <p class="survey-intro">Por favor, ayúdenos a mejorar nuestro servicio respondiendo las siguientes preguntas:</p>
+    
+    <form class="survey-form">
+      <div class="form-group">
+        <label>1. ¿Cómo calificaría la atención recibida? *</label>
+        <input 
+          type="text" 
+          [(ngModel)]="surveyAnswers.question1"
+          name="q1"
+          class="form-control"
+          placeholder="Ej: Excelente, Muy buena, Buena, Regular, Mala">
+      </div>
+
+      <div class="form-group">
+        <label>2. ¿El especialista fue puntual? *</label>
+        <input 
+          type="text" 
+          [(ngModel)]="surveyAnswers.question2"
+          name="q2"
+          class="form-control"
+          placeholder="Ej: Sí, No, Llegó con X minutos de retraso">
+      </div>
+
+      <div class="form-group">
+        <label>3. ¿El especialista explicó claramente su diagnóstico? *</label>
+        <input 
+          type="text" 
+          [(ngModel)]="surveyAnswers.question3"
+          name="q3"
+          class="form-control"
+          placeholder="Ej: Sí, No, Parcialmente">
+      </div>
+
+      <div class="form-group">
+        <label>4. ¿Recomendaría este especialista a otros pacientes? *</label>
+        <input 
+          type="text" 
+          [(ngModel)]="surveyAnswers.question4"
+          name="q4"
+          class="form-control"
+          placeholder="Ej: Sí, No, Tal vez">
+      </div>
+
+      <div class="form-group">
+        <label>5. ¿Las instalaciones de la clínica fueron adecuadas? *</label>
+        <input 
+          type="text" 
+          [(ngModel)]="surveyAnswers.question5"
+          name="q5"
+          class="form-control"
+          placeholder="Ej: Excelente, Buena, Regular, Mala">
+      </div>
+
+      <div class="form-group">
+        <label>6. Comentarios adicionales (opcional)</label>
+        <textarea 
+          [(ngModel)]="surveyAnswers.question6"
+          name="q6"
+          rows="3"
+          class="form-control"
+          placeholder="Ingrese cualquier comentario o sugerencia adicional"></textarea>
+      </div>
+    </form>
+
+    <div class="modal-actions">
+      <button (click)="closeSurveyModal()" class="btn btn-secondary">Cerrar</button>
+      <button (click)="submitSurvey()" class="btn btn-primary">Enviar Encuesta</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Calificación -->
+<div *ngIf="showRatingModal" class="modal-overlay" (click)="closeRatingModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <h2>Calificar Atención</h2>
+    
+    <div class="rating-section">
+      <p>Seleccione su calificación (1-5 estrellas):</p>
+      <div class="stars">
+        <span 
+          *ngFor="let star of [1, 2, 3, 4, 5]"
+          (click)="setRating(star)"
+          [class.selected]="star <= rating"
+          class="star">
+          ⭐
+        </span>
+      </div>
+      <p class="rating-value" *ngIf="rating > 0">{{ rating }} estrella(s)</p>
+    </div>
+
+    <div class="form-group">
+      <label for="patientComment">Comentario sobre la atención *</label>
+      <textarea 
+        id="patientComment"
+        [(ngModel)]="patientComment"
+        rows="4"
+        placeholder="Describa cómo fue la atención del especialista"
+        class="form-control"></textarea>
+    </div>
+
+    <div class="modal-actions">
+      <button (click)="closeRatingModal()" class="btn btn-secondary">Cerrar</button>
+      <button (click)="submitRating()" class="btn btn-primary">Enviar Calificación</button>
+    </div>
+  </div>
+</div>

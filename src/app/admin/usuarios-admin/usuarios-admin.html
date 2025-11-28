@@ -1,0 +1,241 @@
+<div class="usuarios-container">
+  <h1 class="page-title">👥 Gestión de Usuarios</h1>
+
+  <!-- EXPORT EXCEL BUTTON -->
+  <div class="export-section">
+    <button class="btn btn-export" (click)="exportToExcel()" [disabled]="loading || allUsers.length === 0">
+      📊 Exportar a Excel
+    </button>
+  </div>
+
+  <!-- FILTROS Y BÚSQUEDA -->
+  <div class="filters-section">
+    <div class="filter-group">
+      <label>Filtrar por Rol:</label>
+      <select [(ngModel)]="roleFilter" (change)="onRoleFilterChange()" class="form-control">
+        <option value="all">Todos los roles</option>
+        <option value="patient">Pacientes</option>
+        <option value="specialist">Especialistas</option>
+        <option value="admin">Administradores</option>
+      </select>
+    </div>
+
+    <div class="filter-group">
+      <label>Buscar:</label>
+      <input 
+        type="text" 
+        [(ngModel)]="searchTerm" 
+        (input)="onSearchChange()"
+        placeholder="Nombre, apellido, email, DNI..."
+        class="form-control"
+      />
+    </div>
+
+    <div class="filter-stats">
+      <span class="stat-badge">
+        Total: <strong>{{ filteredUsers.length }}</strong>
+      </span>
+    </div>
+  </div>
+
+  <!-- LOADING STATE -->
+  <div *ngIf="loading" class="loading-container">
+    <div class="spinner"></div>
+    <p>Cargando usuarios...</p>
+  </div>
+
+  <!-- USERS TABLE -->
+  <div *ngIf="!loading" class="users-content">
+    <div *ngIf="filteredUsers.length === 0" class="no-users">
+      <h2>📋 Sin Resultados</h2>
+      <p>No se encontraron usuarios con los filtros seleccionados.</p>
+    </div>
+
+    <div *ngIf="filteredUsers.length > 0" class="users-table-container">
+      <table class="users-table">
+        <thead>
+          <tr>
+            <th>Rol</th>
+            <th>Nombre Completo</th>
+            <th>Email</th>
+            <th>DNI</th>
+            <th>Edad</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let user of filteredUsers; trackBy: trackByUserId">
+            <td>
+              <span class="role-badge" [class]="'role-' + user.role">
+                {{ getRoleIcon(user.role) }} {{ getRoleLabel(user.role) }}
+              </span>
+            </td>
+            <td class="user-name">{{ user.name }} {{ user.last_name }}</td>
+            <td class="user-email">{{ user.email }}</td>
+            <td>{{ user.dni || '-' }}</td>
+            <td>{{ user.age || '-' }}</td>
+            <td>
+              <span *ngIf="user.role === 'specialist'" class="status-badge" [class.approved]="user.is_approved">
+                {{ user.is_approved ? '✓ Aprobado' : '⏳ Pendiente' }}
+              </span>
+              <span *ngIf="user.role !== 'specialist'" class="status-badge approved">
+                ✓ Activo
+              </span>
+            </td>
+            <td>
+              <button 
+                *ngIf="user.role === 'patient'"
+                class="btn btn-view-history"
+                (click)="viewPatientHistory(user)"
+                title="Ver Historia Clínica"
+              >
+                📋 Historia Clínica
+              </button>
+              <span *ngIf="user.role !== 'patient'" class="no-action">-</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- MODAL: Patient History List -->
+  <div *ngIf="showHistoryModal && selectedUser" 
+       class="modal-overlay" 
+       (click)="closeHistoryModal()">
+    <div class="modal-content history-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>📋 Historia Clínica - {{ selectedUser.name }} {{ selectedUser.last_name }}</h2>
+        <button class="btn-close" (click)="closeHistoryModal()">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="patient-info-card">
+          <p><strong>DNI:</strong> {{ selectedUser.dni || 'N/A' }}</p>
+          <p><strong>Edad:</strong> {{ selectedUser.age || 'N/A' }}</p>
+          <p><strong>Email:</strong> {{ selectedUser.email }}</p>
+        </div>
+
+        <div *ngIf="loadingHistory" class="loading-state">
+          <div class="spinner-small"></div>
+          <span>Cargando historia clínica...</span>
+        </div>
+
+        <div *ngIf="!loadingHistory && userHistory.length === 0" class="empty-history">
+          <p>Sin registros médicos para este paciente.</p>
+        </div>
+
+        <div *ngIf="!loadingHistory && userHistory.length > 0" class="history-list">
+          <div *ngFor="let record of userHistory; trackBy: trackByRecordId"
+               class="history-item"
+               (click)="openRecordDetail(record)">
+            <div class="history-header">
+              <div class="history-date">
+                📅 {{ formatDate(record.created_at!) }}
+              </div>
+              <div class="history-specialist">
+                Dr. {{ record.specialist?.name }} {{ record.specialist?.last_name }}
+              </div>
+            </div>
+            <div class="history-diagnosis">
+              <strong>Diagnóstico:</strong> {{ record.diagnosis }}
+            </div>
+            <div class="history-stats" *ngIf="record.height || record.weight || record.temperature || record.pressure">
+              <span *ngIf="record.height" class="stat">📏 {{ record.height }} cm</span>
+              <span *ngIf="record.weight" class="stat">⚖️ {{ record.weight }} kg</span>
+              <span *ngIf="record.temperature" class="stat">🌡️ {{ record.temperature }} °C</span>
+              <span *ngIf="record.pressure" class="stat">💓 {{ record.pressure }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="closeHistoryModal()">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: Record Detail -->
+  <div *ngIf="showDetailModal && selectedRecord" 
+       class="modal-overlay" 
+       (click)="closeDetailModal()">
+    <div class="modal-content detail-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>📋 Detalle de Consulta Médica</h2>
+        <button class="btn-close" (click)="closeDetailModal()">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="detail-section">
+          <h3>Información General</h3>
+          <div class="detail-grid">
+            <div class="detail-item">
+              <span class="label">Fecha:</span>
+              <span class="value">{{ formatDetailDate(selectedRecord.created_at!) }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="label">Paciente:</span>
+              <span class="value">{{ selectedUser?.name }} {{ selectedUser?.last_name }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="label">Especialista:</span>
+              <span class="value">Dr. {{ selectedRecord.specialist?.name }} {{ selectedRecord.specialist?.last_name }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="detail-section" *ngIf="selectedRecord.height || selectedRecord.weight || selectedRecord.temperature || selectedRecord.pressure">
+          <h3>Datos Físicos</h3>
+          <div class="detail-grid">
+            <div class="detail-item" *ngIf="selectedRecord.height">
+              <span class="label">Altura:</span>
+              <span class="value">{{ selectedRecord.height }} cm</span>
+            </div>
+            <div class="detail-item" *ngIf="selectedRecord.weight">
+              <span class="label">Peso:</span>
+              <span class="value">{{ selectedRecord.weight }} kg</span>
+            </div>
+            <div class="detail-item" *ngIf="selectedRecord.temperature">
+              <span class="label">Temperatura:</span>
+              <span class="value">{{ selectedRecord.temperature }} °C</span>
+            </div>
+            <div class="detail-item" *ngIf="selectedRecord.pressure">
+              <span class="label">Presión Arterial:</span>
+              <span class="value">{{ selectedRecord.pressure }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="detail-section">
+          <h3>Diagnóstico</h3>
+          <div class="diagnosis-box">
+            {{ selectedRecord.diagnosis }}
+          </div>
+        </div>
+
+        <div class="detail-section" *ngIf="selectedRecord.observations">
+          <h3>Observaciones</h3>
+          <div class="observations-box">
+            {{ selectedRecord.observations }}
+          </div>
+        </div>
+
+        <div class="detail-section" *ngIf="selectedRecord.additional_fields && selectedRecord.additional_fields.length > 0">
+          <h3>Información Adicional</h3>
+          <div class="detail-grid">
+            <div class="detail-item" *ngFor="let field of selectedRecord.additional_fields">
+              <span class="label">{{ field.key }}:</span>
+              <span class="value">{{ field.value }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="closeDetailModal()">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>

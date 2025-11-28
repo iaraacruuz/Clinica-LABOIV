@@ -1,26 +1,16 @@
 import { Component } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { Router, RouterOutlet } from '@angular/router';
+import { RouterOutlet } from '@angular/router';
+import { LoaderComponent } from './shared/loader/loader';
+import { MessageToastComponent } from './shared/message-toast/message-toast';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule,RouterOutlet],
-  templateUrl: './app.html',
-  styleUrls: ['./app.scss']
+  imports: [RouterOutlet, LoaderComponent, MessageToastComponent],
+  template: `
+    <app-loader></app-loader>
+    <app-message-toast></app-message-toast>
+    <router-outlet></router-outlet>
+  `
 })
-export class AppComponent {
-  isMenuOpen = false;
-
-  constructor(private router: Router) {}
-
-  // Navegación real usando Router
-  navigateTo(page: string): void {
-    this.isMenuOpen = false;
-    this.router.navigate([`/${page}`]);
-  }
-
-  toggleMenu(): void {
-    this.isMenuOpen = !this.isMenuOpen;
-  }
-}
+export class AppComponent {}

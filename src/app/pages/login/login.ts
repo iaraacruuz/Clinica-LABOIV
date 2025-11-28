@@ -1,142 +1,133 @@
-import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common'; 
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms'; 
-import { AuthService, SessionUser, UserData } from '../../services/auth'; // Asumiendo que existe el AuthService
-import { Router, RouterModule } from '@angular/router'; 
-import { signal } from '@angular/core'; // Usamos signals para el estado
+import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
+import { SupabaseService } from '../../services/supabase.service';
+import { AuthService } from '../../services/auth';
+import { MessageService } from '../../services/message.service';
+import { ConfirmationModalComponent } from '../../shared/confirmation-modal/confirmation-modal';
 
 @Component({
   selector: 'app-login',
-  standalone: true, 
-  imports: [
-    CommonModule, 
-    ReactiveFormsModule, 
-    RouterModule, 
-  ],
+  standalone: true,
+  imports: [CommonModule, FormsModule, ConfirmationModalComponent],
   templateUrl: './login.html',
   styleUrls: ['./login.scss']
 })
-export class LoginComponent implements OnInit {
-
-  loginForm!: FormGroup;
-  errorLogin = signal<string>('');
-  loading = signal<boolean>(false);
-
-  // Datos simulados de acceso rápido (alineados con auth.service.ts)
-  accesoRapidoUsuarios = [
-    { mail: 'admin@clinic.com', pass: '123456', perfil: 'Admin' },
-    { mail: 'especialista.aprobado@clinic.com', pass: '123456', perfil: 'Especialista' },
-    { mail: 'paciente.verificado@clinic.com', pass: '123456', perfil: 'Paciente' },
-    { mail: 'especialista.pendiente@clinic.com', pass: '123456', perfil: 'Esp. Pendiente' }, // Caso denegado
-    { mail: 'paciente.noverificado@clinic.com', pass: '123456', perfil: 'Pac. No Verif.' }, // Caso denegado
-  ];
+export class LoginComponent {
+  email = '';
+  password = '';
+  showBackConfirmation = false;
+  
+  // Validaciones en tiempo real
+  emailError = '';
+  passwordError = '';
+  emailTouched = false;
+  passwordTouched = false;
 
   constructor(
-    private fb: FormBuilder, 
-    private authService: AuthService, 
-    private router: Router
-  ) { }
+    private supabase: SupabaseService,
+    private authService: AuthService,
+    private router: Router,
+    private messageService: MessageService
+  ) {}
 
-  ngOnInit(): void {
-    this.loginForm = this.fb.group({
-      mail: ['', [Validators.required, Validators.email]],
-      password: ['', [Validators.required, Validators.minLength(6)]],
-    });
-  }
-  
-  /**
-   * Getter para un acceso más limpio a los controles en la plantilla.
-   */
-  get c() { 
-      return this.loginForm.controls; 
-  }
-
-  /**
-   * Rellena el formulario con las credenciales de acceso rápido.
-   */
-  cargarAccesoRapido(mail: string, pass: string) {
-    this.loginForm.setValue({
-        mail: mail,
-        password: pass
-    });
-    this.errorLogin.set('');
-    this.loginForm.markAllAsTouched();
-  }
-
-  /**
-   * Intenta iniciar sesión con las credenciales del formulario y aplica las reglas de acceso.
-   */
-  async iniciarSesion() {
-    this.errorLogin.set('');
-    this.loginForm.markAllAsTouched();
-
-    if (this.loginForm.invalid) {
-      this.errorLogin.set('Por favor, ingresa un email válido y contraseña (mín. 6 caracteres).');
-      return;
-    }
-
-    const { mail, password } = this.loginForm.value;
-    let sessionUser: SessionUser;
-
+  async login() {
     try {
-      this.loading.set(true);
-
-      // 1. Autenticar con Supabase/Backend (Simulado). Retorna SessionUser directamente.
-      sessionUser = await this.authService.iniciarSesion(mail, password);
+      // Call AuthService.iniciarSesion which handles ALL auth flow
+      // (login, profile creation, validation) in a serialized manner
+      await this.authService.iniciarSesion(this.email, this.password);
       
-      // 2. Obtener datos adicionales del usuario (perfil, estado) desde Supabase DB (Simulado)
-      // Usamos sessionUser.uid directamente.
-      const userData = await this.authService.getUserData(sessionUser.uid); 
+      // Redirect to dashboard for all authenticated users
+      this.router.navigate(['/dashboard']);
+    } catch (err: any) {
+      const errorMsg = err.message || 'Error desconocido';
       
-      const emailVerificado = sessionUser.emailVerified; 
-      
-      if (!userData) {
-          await this.authService.cerrarSesion();
-          this.errorLogin.set('No se encontraron datos de perfil. Contacta a soporte.');
-          return;
-      }
-
-      // 3. Aplicar las Reglas de Ingreso según el perfil
-      
-      // Regla Paciente: Solo si verificó su email.
-      if (userData.perfil === 'paciente' && !emailVerificado) {
-          await this.authService.cerrarSesion();
-          this.errorLogin.set('Acceso denegado: Debes verificar tu correo electrónico para ingresar. Revisa tu bandeja de entrada.');
-          return;
-      }
-      
-      // Regla Especialista:
-      if (userData.perfil === 'especialista') {
-          // Sub-Regla 1: Debe verificar su email.
-          if (!emailVerificado) {
-              await this.authService.cerrarSesion();
-              this.errorLogin.set('Acceso denegado: Debes verificar tu correo electrónico para ingresar.');
-              return;
-          }
-          // Sub-Regla 2: Debe estar activo (aprobado).
-          if (userData.estado === 'pendiente_aprobacion') {
-              await this.authService.cerrarSesion();
-              this.errorLogin.set('Acceso denegado: Tu cuenta de Especialista aún está pendiente de aprobación por el administrador.');
-              return;
-          }
-      }
-      
-      // 4. Si es administrador o pasó todas las validaciones
-      console.log(`Ingreso exitoso como ${userData.perfil}. Redirigiendo a /home...`);
-      this.router.navigate(['/home']); 
-
-    } catch (error: any) {
-      console.error('Error de login:', error);
-      
-      // Manejo de errores simulados (basados en la simulación de error en AuthService)
-      if (error.code === 'auth/invalid-credential') {
-        this.errorLogin.set('Credenciales inválidas. Verifica tu email y contraseña.');
+      if (errorMsg === 'EMAIL_UNVERIFIED') {
+        this.messageService.showWarning('Debes verificar tu correo electrónico antes de iniciar sesión. Revisá tu casilla de email.');
+      } else if (errorMsg === 'SPECIALIST_NOT_APPROVED') {
+        this.messageService.showWarning('Tu cuenta de especialista aún no fue aprobada por un administrador. Por favor esperá la aprobación.');
+      } else if (errorMsg === 'ADMIN_NOT_APPROVED') {
+        this.messageService.showWarning('Tu cuenta de administrador aún no fue aprobada por otro administrador. Por favor esperá la aprobación.');
+      } else if (errorMsg === 'LOGIN_IN_PROGRESS') {
+        this.messageService.showInfo('Inicio de sesión en progreso. Por favor espera...');
+      } else if (errorMsg === 'PROFILE_CREATION_FAILED') {
+        this.messageService.showError('No se pudo crear el perfil del usuario. Por favor contactá al administrador');
+      } else if (errorMsg === 'USER_NOT_FOUND') {
+        this.messageService.showError('Credenciales incorrectas');
       } else {
-        this.errorLogin.set('Error al intentar ingresar. Por favor, intenta de nuevo.');
+        this.messageService.showError('Error al iniciar sesión: ' + errorMsg);
       }
-    } finally {
-        this.loading.set(false);
+      console.error('Login error:', err);
     }
+  }
+
+  // Función para accesos rápidos
+  quickAccess(role: 'patient' | 'specialist' | 'admin') {
+    switch(role) {
+      case 'patient':
+        this.email = 'paciente@clinica.com';
+        this.password = '123456';
+        break;
+      case 'specialist':
+        this.email = 'especialista@clinica.com';
+        this.password = '123456';
+        break;
+      case 'admin':
+        this.email = 'admin@clinica.com';
+        this.password = '123456';
+        break;
+    }
+  }
+
+  goToRegister() {
+    this.router.navigate(['/registro']);
+  }
+
+  goBackWithConfirmation() {
+    if (this.email || this.password) {
+      this.showBackConfirmation = true;
+    } else {
+      this.router.navigate(['/']);
+    }
+  }
+
+  confirmGoBack() {
+    this.showBackConfirmation = false;
+    this.router.navigate(['/']);
+  }
+
+  cancelGoBack() {
+    this.showBackConfirmation = false;
+  }
+
+  // Validaciones en tiempo real
+  validateEmail() {
+    this.emailTouched = true;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    
+    if (!this.email) {
+      this.emailError = 'El correo electrónico es obligatorio';
+    } else if (!emailRegex.test(this.email)) {
+      this.emailError = 'Por favor ingresá un correo electrónico válido';
+    } else {
+      this.emailError = '';
+    }
+  }
+
+  validatePassword() {
+    this.passwordTouched = true;
+    
+    if (!this.password) {
+      this.passwordError = 'La contraseña es obligatoria';
+    } else if (this.password.length < 6) {
+      this.passwordError = 'La contraseña debe tener al menos 6 caracteres';
+    } else {
+      this.passwordError = '';
+    }
+  }
+
+  isFormValid(): boolean {
+    return !this.emailError && !this.passwordError && this.email !== '' && this.password !== '';
   }
 }
-

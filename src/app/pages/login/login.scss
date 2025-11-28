@@ -1,118 +1,211 @@
-// Variables de Color (Usando valores directos como en el ejemplo anterior)
-$color-primary-green: #059669; // Green-600
-$color-secondary-blue: #3b82f6; // Blue-500
-$color-dark-green: #047857; // Green-700
-
-// --- Contenedor Principal ---
-.login-canil-wrapper {
-    min-height: 100vh;
-    background-color: #f0fdfa; /* Green-50 */
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 1rem;
-    font-family: 'Inter', sans-serif;
+.login-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #4facfe, #00f2fe);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-family: 'Segoe UI', sans-serif;
 }
 
-// --- Tarjeta de Login ---
 .login-card {
-    background-color: #ffffff;
-    border: 1px solid #d1fae5; /* Green-100 */
-    box-shadow: 0 10px 25px -3px rgba(0, 0, 0, 0.1), 0 4px 10px -2px rgba(0, 0, 0, 0.05);
-    border-radius: 1.5rem; 
-    max-width: 28rem; 
+  background: white;
+  padding: 50px 40px;
+  border-radius: 20px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+  max-width: 400px;
+  width: 100%;
+  text-align: center;
+  animation: fadeIn 1s ease-in-out;
+  position: relative;
+}
+
+.clinic-logo {
+  width: 100px;
+  height: 100px;
+  margin: 0 auto 25px;
+  
+  img {
     width: 100%;
-    padding: 2.5rem;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    
-    @media (max-width: 640px) {
-        padding: 2rem 1.5rem;
+    height: 100%;
+    object-fit: contain;
+    filter: drop-shadow(0 4px 12px rgba(52, 152, 219, 0.3));
+    animation: float 3s ease-in-out infinite;
+  }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+.btn-back {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  padding: 8px 16px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #495057;
+  cursor: pointer;
+  transition: all 0.3s ease;
+
+  svg {
+    transition: transform 0.3s ease;
+  }
+
+  &:hover {
+    background: #e9ecef;
+    border-color: #adb5bd;
+    transform: translateX(-3px);
+
+    svg {
+      transform: translateX(-3px);
     }
+  }
 }
 
-.titulo-principal {
-    color: $color-dark-green; 
-    font-size: 2rem; 
-    font-weight: 800; 
+.login-card h2 {
+  font-size: 2.5rem;
+  margin-bottom: 10px;
+  color: #2c3e50;
 }
 
-.subtitulo-seccion {
-    color: #6b7280; /* Gray-500 */
-    font-weight: 500;
+.login-card p {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #3498db;
+  margin-bottom: 30px;
 }
 
-// --- Inputs ---
 .input-field {
-    border: 1px solid #d1d5db; 
-    border-radius: 0.75rem; 
-    transition: box-shadow 0.3s, border-color 0.3s;
-    
-    &:focus {
-        outline: none;
-        border-color: $color-primary-green; 
-        box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.2);
-    }
+  width: 100%;
+  padding: 12px 15px;
+  margin-bottom: 5px;
+  border-radius: 50px;
+  border: 1px solid #ddd;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+
+  &:focus {
+    outline: none;
+    border-color: #3498db;
+    box-shadow: 0 0 10px rgba(52, 152, 219, 0.2);
+  }
+
+  &.input-error {
+    border-color: #e74c3c;
+    background-color: #fff5f5;
+  }
 }
 
-// --- Botón de Login ---
-.btn-login {
-    background-color: $color-primary-green; 
-    color: #ffffff;
-    box-shadow: 0 5px 15px -3px rgba(5, 150, 105, 0.4);
-    font-weight: 700;
-    
-    &:hover:not(:disabled) {
-        background-color: $color-dark-green; 
-        transform: translateY(-1px);
-    }
-    
-    &:disabled {
-        opacity: 0.6;
-        cursor: not-allowed;
-        box-shadow: none;
-    }
-}
-
-// --- Mensaje de Error ---
 .error-message {
-    text-align: center;
-    color: #ef4444; /* Red-500 */
-    background-color: #fef2f2; /* Red-50 */
-    padding: 0.75rem;
-    border-radius: 0.5rem;
-    margin-top: 1rem;
-    border: 1px solid #fecaca; /* Red-200 */
-    font-weight: 600;
+  color: #e74c3c;
+  font-size: 0.85rem;
+  text-align: left;
+  margin-bottom: 15px;
+  margin-left: 15px;
+  font-weight: 500;
 }
 
-// --- Acceso Rápido ---
+.btn-login {
+  width: 100%;
+  padding: 12px 0;
+  border-radius: 50px;
+  background: #3498db;
+  color: white;
+  font-weight: bold;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  border: none;
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    background: #217dbb;
+    transform: translateY(-3px);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
 .acceso-rapido-container {
-    margin-top: 2rem;
-    padding-top: 1.5rem;
-    border-top: 1px dashed #e5e7eb;
+  margin-top: 30px;
 }
 
 .acceso-rapido-titulo {
-    font-size: 0.9rem;
-    font-weight: 700;
-    color: #6b7280;
-    text-align: center;
-    margin-bottom: 1rem;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #3498db;
+  margin-bottom: 15px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .btn-acceso-rapido {
-    padding: 0.75rem 0.5rem;
-    border-radius: 0.5rem;
+  padding: 10px 0;
+  border-radius: 50px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  border: 2px solid;
+  transition: all 0.3s ease;
+  width: 100%;
+  margin-bottom: 10px;
+  cursor: pointer;
+
+  &.green { border-color: #2ecc71; color: #2ecc71; }
+  &.blue { border-color: #3498db; color: #3498db; }
+  &.purple { border-color: #9b59b6; color: #9b59b6; }
+
+  &:hover {
+    background: currentColor;
+    color: white;
+    transform: translateY(-3px);
+  }
+}
+
+.register-link {
+  margin-top: 30px;
+  padding-top: 20px;
+  border-top: 1px solid #e0e0e0;
+
+  p {
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 10px;
+  }
+
+  .btn-link-register {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 50px;
+    padding: 10px 30px;
     font-weight: 600;
-    font-size: 0.875rem;
-    border: 1px solid;
-    transition: transform 0.2s, box-shadow 0.2s;
-    text-align: center;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s ease;
 
     &:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
     }
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 600px) {
+  .login-card { padding: 40px 20px; }
+  .login-card h2 { font-size: 2rem; }
 }

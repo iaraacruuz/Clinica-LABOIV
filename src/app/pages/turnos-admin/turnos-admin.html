@@ -1,0 +1,166 @@
+<div class="turnos-admin-container">
+  <h1 class="page-title">Gestión de Turnos - Administrador</h1>
+
+  <!-- Filtros -->
+  <div class="filters-section">
+    <div class="filter-group">
+      <label for="filterSpecialty">Buscar por especialidad:</label>
+      <input
+        type="text"
+        id="filterSpecialty"
+        [(ngModel)]="filterSpecialty"
+        (input)="onFilterChange()"
+        placeholder="Ej: Cardiología"
+        class="filter-input"
+      />
+    </div>
+
+    <div class="filter-group">
+      <label for="filterSpecialist">Buscar por especialista:</label>
+      <input
+        type="text"
+        id="filterSpecialist"
+        [(ngModel)]="filterSpecialist"
+        (input)="onFilterChange()"
+        placeholder="Ej: Dr. Juan Pérez"
+        class="filter-input"
+      />
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div *ngIf="loading" class="loading-container">
+    <div class="spinner"></div>
+    <p>Cargando turnos...</p>
+  </div>
+
+  <!-- Estadísticas rápidas -->
+  <div *ngIf="!loading && filteredAppointments.length > 0" class="stats-section">
+    <div class="stat-card">
+      <span class="stat-number">{{ filteredAppointments.length }}</span>
+      <span class="stat-label">Total de turnos</span>
+    </div>
+    <div class="stat-card pending">
+      <span class="stat-number">{{ pendingCount }}</span>
+      <span class="stat-label">Pendientes</span>
+    </div>
+    <div class="stat-card accepted">
+      <span class="stat-number">{{ acceptedCount }}</span>
+      <span class="stat-label">Aceptados</span>
+    </div>
+    <div class="stat-card completed">
+      <span class="stat-number">{{ completedCount }}</span>
+      <span class="stat-label">Realizados</span>
+    </div>
+  </div>
+
+  <!-- Lista de turnos -->
+  <div *ngIf="!loading && filteredAppointments.length === 0" class="no-appointments">
+    <p>No hay turnos registrados en la clínica</p>
+  </div>
+
+  <div *ngIf="!loading && filteredAppointments.length > 0" class="appointments-grid">
+    <div *ngFor="let appointment of filteredAppointments" class="appointment-card">
+      <!-- Header con estado -->
+      <div class="card-header">
+        <span class="status-badge" [ngClass]="getStatusClass(appointment.status_id)">
+          {{ getStatusText(appointment.status_id) }}
+        </span>
+        <span class="specialty-badge">{{ appointment.specialty_name }}</span>
+      </div>
+
+      <!-- Información del turno -->
+      <div class="card-body">
+        <div class="info-row">
+          <strong>Paciente:</strong>
+          <span>{{ getPatientFullName(appointment) }}</span>
+        </div>
+
+        <div class="info-row">
+          <strong>Especialista:</strong>
+          <span>{{ getSpecialistFullName(appointment) }}</span>
+        </div>
+
+        <div class="info-row">
+          <strong>Fecha y hora:</strong>
+          <span>{{ formatDate(appointment.appointment_date, appointment.appointment_time) }}</span>
+        </div>
+
+        <div class="info-row">
+          <strong>Duración:</strong>
+          <span>{{ appointment.duration_minutes }} minutos</span>
+        </div>
+
+        <!-- Motivo de cancelación si existe -->
+        <div *ngIf="appointment.cancellation_reason" class="info-row reason-row">
+          <strong>Motivo de cancelación:</strong>
+          <p>{{ appointment.cancellation_reason }}</p>
+        </div>
+
+        <!-- Motivo de rechazo si existe -->
+        <div *ngIf="appointment.rejection_reason" class="info-row reason-row">
+          <strong>Motivo de rechazo:</strong>
+          <p>{{ appointment.rejection_reason }}</p>
+        </div>
+
+        <!-- Reseña del especialista si existe -->
+        <div *ngIf="appointment.specialist_review" class="info-row reason-row">
+          <strong>Reseña del especialista:</strong>
+          <p>{{ appointment.specialist_review }}</p>
+        </div>
+      </div>
+
+      <!-- Acciones -->
+      <div class="card-actions">
+        <button
+          *ngIf="canCancel(appointment)"
+          (click)="openCancelModal(appointment)"
+          class="btn btn-cancel"
+        >
+          🚫 Cancelar Turno
+        </button>
+
+        <span *ngIf="!canCancel(appointment)" class="no-actions">
+          No hay acciones disponibles
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Cancelar Turno -->
+  <div *ngIf="showCancelModal" class="modal-overlay" (click)="closeCancelModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <h2>Cancelar Turno</h2>
+      <p>Por favor, indicá el motivo de la cancelación:</p>
+
+      <div class="appointment-summary" *ngIf="selectedAppointment">
+        <p><strong>Paciente:</strong> {{ getPatientFullName(selectedAppointment) }}</p>
+        <p><strong>Especialista:</strong> {{ getSpecialistFullName(selectedAppointment) }}</p>
+        <p><strong>Fecha:</strong> {{ formatDate(selectedAppointment.appointment_date, selectedAppointment.appointment_time) }}</p>
+        <p><strong>Especialidad:</strong> {{ selectedAppointment.specialty_name }}</p>
+      </div>
+
+      <div class="form-group">
+        <label for="cancellationReason">Motivo de la cancelación *</label>
+        <textarea
+          id="cancellationReason"
+          [(ngModel)]="cancellationReason"
+          rows="4"
+          placeholder="Ej: Reorganización de horarios, emergencia en la clínica..."
+          required
+        ></textarea>
+      </div>
+
+      <div class="modal-actions">
+        <button 
+          (click)="confirmCancel()" 
+          class="btn btn-primary"
+          [disabled]="!cancellationReason.trim()"
+        >
+          Confirmar Cancelación
+        </button>
+        <button (click)="closeCancelModal()" class="btn btn-secondary">Cancelar</button>
+      </div>
+    </div>
+  </div>
+</div>

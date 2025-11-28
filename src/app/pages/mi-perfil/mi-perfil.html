@@ -1,0 +1,393 @@
+<div class="mi-perfil-container">
+  <h1 class="page-title">Mi Perfil</h1>
+  
+  <!-- LOADING -->
+  <div *ngIf="isLoading" class="loading-container">
+    <div class="spinner"></div>
+    <p>Cargando información del perfil...</p>
+  </div>
+
+  <!-- CONTENIDO DEL PERFIL -->
+  <div *ngIf="!isLoading && currentUser" class="profile-content">
+    
+    <!-- INFORMACIÓN BÁSICA -->
+    <div class="profile-basic-info">
+      <div class="profile-header">
+        <div class="user-avatar">
+          <img 
+            *ngIf="currentUser.profile_image_url" 
+            [src]="currentUser.profile_image_url" 
+            [alt]="currentUser.name + ' ' + currentUser.last_name"
+            class="avatar-image"
+          />
+          <span *ngIf="!currentUser.profile_image_url" class="role-icon">{{ getRoleIcon() }}</span>
+        </div>
+        
+        <div class="user-info">
+          <h2 class="user-name">{{ currentUser.name }} {{ currentUser.last_name }}</h2>
+          <p class="user-role">{{ getRoleName() }}</p>
+          <p class="user-email">{{ currentUser.email }}</p>
+          <p class="user-dni">DNI: {{ currentUser.dni }}</p>
+        </div>
+      </div>
+
+      <!-- IMÁGENES DEL USUARIO -->
+      <div *ngIf="getUserImages().length > 0" class="user-images">
+        <h3>Mis Imágenes</h3>
+        <div class="images-gallery">
+          <img 
+            *ngFor="let image of getUserImages(); trackBy: trackByIndex" 
+            [src]="image" 
+            [alt]="currentUser.name + ' ' + currentUser.last_name"
+            class="user-image"
+            onerror="this.style.display='none'"
+          />
+        </div>
+      </div>
+    </div>
+
+    <!-- SECCIÓN DE HORARIOS (SOLO ESPECIALISTAS) -->
+    <div *ngIf="currentUser.role === 'specialist'" class="schedules-section">
+      <div class="section-header">
+        <h2>Mis Horarios de Atención</h2>
+        <div class="header-actions">
+          <button 
+            *ngIf="!isEditingSchedules"
+            class="btn btn-primary"
+            (click)="toggleEditSchedules()"
+          >
+            ✏️ Editar Horarios
+          </button>
+          <button 
+            *ngIf="isEditingSchedules"
+            class="btn btn-secondary"
+            (click)="toggleEditSchedules()"
+          >
+            ❌ Cancelar
+          </button>
+        </div>
+      </div>
+
+      <!-- VISTA DE HORARIOS (MODO LECTURA) -->
+      <div *ngIf="!isEditingSchedules" class="schedules-view">
+        <div *ngIf="loadingSchedules" class="loading-schedules">
+          <div class="spinner-small"></div>
+          Cargando horarios...
+        </div>
+
+        <div *ngIf="!loadingSchedules && availabilities.length === 0" class="no-schedules">
+          <p>📅 No tienes horarios de atención configurados.</p>
+          <p class="note">Haz clic en "Editar Horarios" para agregar tus horarios de disponibilidad.</p>
+        </div>
+
+        <div *ngIf="!loadingSchedules && availabilities.length > 0" class="schedules-grid">
+          <div *ngFor="let day of weekDays" class="day-schedule">
+            <h3 class="day-name">{{ day.name }}</h3>
+            
+            <div class="day-slots">
+              <div 
+                *ngFor="let schedule of getSchedulesByDay(day.id)" 
+                class="schedule-slot"
+              >
+                <div class="slot-info">
+                  <span class="specialty">{{ getSpecialtyName(schedule.specialty_id) }}</span>
+                  <span class="time-range">{{ schedule.start_time }} - {{ schedule.end_time }}</span>
+                </div>
+              </div>
+              
+              <div *ngIf="getSchedulesByDay(day.id).length === 0" class="no-slots">
+                Sin horarios
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- EDITOR DE HORARIOS (MODO EDICIÓN) -->
+      <div *ngIf="isEditingSchedules" class="schedules-editor">
+        
+        <!-- FORMULARIO PARA AGREGAR HORARIO -->
+        <div class="add-schedule-form">
+          <h3>Agregar Nuevo Horario</h3>
+          <form #addScheduleForm="ngForm" (ngSubmit)="onAddScheduleSubmit(addScheduleForm)">
+            <div class="form-row">
+              <div class="form-group">
+                <label>Especialidad</label>
+                <select name="specialtyId" ngModel required class="form-control">
+                  <option value="">Seleccionar especialidad</option>
+                  <option *ngFor="let specialty of specialties" [value]="specialty.id">
+                    {{ specialty.name }}
+                  </option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label>Día</label>
+                <select name="dayOfWeek" ngModel required class="form-control">
+                  <option value="">Seleccionar día</option>
+                  <option *ngFor="let day of weekDays" [value]="day.id">
+                    {{ day.name }}
+                  </option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>Hora de Inicio</label>
+                <select name="startTime" ngModel required class="form-control">
+                  <option value="">Seleccionar hora</option>
+                  <option *ngFor="let hour of clinicHours" [value]="hour.value">
+                    {{ hour.label }}
+                  </option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label>Hora de Fin</label>
+                <select name="endTime" ngModel required class="form-control">
+                  <option value="">Seleccionar hora</option>
+                  <option *ngFor="let hour of clinicHours" [value]="hour.value">
+                    {{ hour.label }}
+                  </option>
+                </select>
+              </div>
+            </div>
+
+            <button 
+              type="submit" 
+              class="btn btn-success"
+              [disabled]="addScheduleForm.invalid"
+            >
+              ➕ Agregar Horario
+            </button>
+          </form>
+        </div>
+
+        <!-- HORARIOS EXISTENTES (MODO EDICIÓN) -->
+        <div class="existing-schedules">
+          <h3>Horarios Actuales</h3>
+          
+          <div *ngIf="availabilities.length === 0" class="no-schedules">
+            <p>📅 No tienes horarios configurados aún.</p>
+          </div>
+
+          <div *ngIf="availabilities.length > 0" class="schedules-list">
+            <div *ngFor="let day of weekDays" class="day-group">
+              <h4 class="day-title">{{ day.name }}</h4>
+              
+              <div class="day-schedules">
+                <div 
+                  *ngFor="let schedule of getSchedulesByDay(day.id)"
+                  class="schedule-item"
+                >
+                  <div class="schedule-details">
+                    <span class="specialty-name">{{ getSpecialtyName(schedule.specialty_id) }}</span>
+                    <span class="time-info">{{ schedule.start_time }} - {{ schedule.end_time }}</span>
+                  </div>
+                  
+                  <button 
+                    class="btn-delete"
+                    (click)="deleteSchedule(schedule.id)"
+                    title="Eliminar horario"
+                  >
+                    🗑️
+                  </button>
+                </div>
+                
+                <div *ngIf="getSchedulesByDay(day.id).length === 0" class="empty-day">
+                  Sin horarios configurados
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- INFORMACIÓN SOBRE HORARIOS DE CLÍNICA -->
+        <div class="clinic-info">
+          <h4>📋 Información sobre Horarios</h4>
+          <ul>
+            <li><strong>Lunes a Viernes:</strong> 08:00 - 19:00</li>
+            <li><strong>Sábados:</strong> 08:00 - 14:00</li>
+            <li><strong>Domingos:</strong> Cerrado</li>
+            <li><strong>Duración mínima:</strong> 30 minutos por cita</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- INFORMACIÓN ADICIONAL PARA PACIENTES Y ADMINS -->
+    <div *ngIf="currentUser.role !== 'specialist'" class="additional-info">
+      <div class="info-card">
+        <h3>Información de la Cuenta</h3>
+        <div class="info-item">
+          <span class="label">Tipo de Usuario:</span>
+          <span class="value">{{ getRoleName() }}</span>
+        </div>
+        <div class="info-item">
+          <span class="label">Email:</span>
+          <span class="value">{{ currentUser.email }}</span>
+        </div>
+        <div class="info-item">
+          <span class="label">DNI:</span>
+          <span class="value">{{ currentUser.dni }}</span>
+        </div>
+        <div class="info-item">
+          <span class="label">Estado:</span>
+          <span class="value status-active">✅ Activo</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- HISTORIA CLÍNICA PARA PACIENTES -->
+    <div *ngIf="currentUser.role === 'patient'" class="medical-history-section">
+      <div class="section-header">
+        <h2>📋 Mi Historia Clínica</h2>
+        <button 
+          *ngIf="medicalHistory.length > 0"
+          (click)="downloadMedicalHistoryPDF()" 
+          class="btn-download-pdf"
+        >
+          📄 Descargar PDF
+        </button>
+      </div>
+
+      <div *ngIf="loadingMedicalHistory" class="loading-container">
+        <div class="spinner"></div>
+        <p>Cargando historia clínica...</p>
+      </div>
+
+      <div *ngIf="!loadingMedicalHistory && medicalHistory.length === 0" class="empty-state">
+        <div class="empty-icon">📋</div>
+        <h3>Sin registros médicos</h3>
+        <p>Aún no tenés consultas registradas en tu historia clínica</p>
+      </div>
+
+      <div *ngIf="!loadingMedicalHistory && medicalHistory.length > 0" class="medical-records-grid">
+        <div 
+          *ngFor="let record of medicalHistory; trackBy: trackByIndex"
+          class="medical-record-card"
+          (click)="openMedicalHistoryDetail(record)"
+        >
+          <div class="record-header">
+            <div class="record-date">
+              <span class="date-icon">📅</span>
+              <span>{{ formatMedicalDate(record.created_at!) }}</span>
+            </div>
+            <span class="view-details">Ver detalles →</span>
+          </div>
+
+          <div class="record-info">
+            <div class="info-row">
+              <strong>Especialista:</strong>
+              <span>Dr. {{ record.specialist?.name }} {{ record.specialist?.last_name }}</span>
+            </div>
+            <div class="info-row diagnosis-preview">
+              <strong>Diagnóstico:</strong>
+              <span class="diagnosis-text">{{ record.diagnosis }}</span>
+            </div>
+          </div>
+
+          <div class="record-stats">
+            <div class="stat-badge" *ngIf="record.height">
+              <span class="stat-label">Altura:</span> {{ record.height }} cm
+            </div>
+            <div class="stat-badge" *ngIf="record.weight">
+              <span class="stat-label">Peso:</span> {{ record.weight }} kg
+            </div>
+            <div class="stat-badge" *ngIf="record.temperature">
+              <span class="stat-label">Temp:</span> {{ record.temperature }}°C
+            </div>
+            <div class="stat-badge" *ngIf="record.pressure">
+              <span class="stat-label">Presión:</span> {{ record.pressure }}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ERROR STATE -->
+  <div *ngIf="!isLoading && !currentUser" class="error-state">
+    <h2>❌ Error al Cargar Perfil</h2>
+    <p>No se pudo obtener la información del usuario.</p>
+    <button class="btn btn-primary" (click)="loadProfile()">
+      🔄 Intentar Nuevamente
+    </button>
+  </div>
+</div>
+<!-- MODAL: Detalle Historia Cl�nica -->
+<div *ngIf="showMedicalHistoryModal && selectedRecord" class="modal-overlay" (click)="closeMedicalHistoryModal()">
+  <div class="modal-content medical-detail-modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>?? Detalle de Consulta M�dica</h2>
+      <button class="btn-close" (click)="closeMedicalHistoryModal()">?</button>
+    </div>
+
+    <div class="modal-body">
+      <div class="detail-section">
+        <h3>Informaci�n General</h3>
+        <div class="detail-grid">
+          <div class="detail-item">
+            <span class="label">Fecha:</span>
+            <span class="value">{{ formatMedicalDate(selectedRecord.created_at!) }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="label">Especialista:</span>
+            <span class="value">Dr. {{ selectedRecord.specialist?.name }} {{ selectedRecord.specialist?.last_name }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="detail-section" *ngIf="selectedRecord.height || selectedRecord.weight || selectedRecord.temperature || selectedRecord.pressure">
+        <h3>Datos F�sicos</h3>
+        <div class="detail-grid">
+          <div class="detail-item" *ngIf="selectedRecord.height">
+            <span class="label">Altura:</span>
+            <span class="value">{{ selectedRecord.height }} cm</span>
+          </div>
+          <div class="detail-item" *ngIf="selectedRecord.weight">
+            <span class="label">Peso:</span>
+            <span class="value">{{ selectedRecord.weight }} kg</span>
+          </div>
+          <div class="detail-item" *ngIf="selectedRecord.temperature">
+            <span class="label">Temperatura:</span>
+            <span class="value">{{ selectedRecord.temperature }} �C</span>
+          </div>
+          <div class="detail-item" *ngIf="selectedRecord.pressure">
+            <span class="label">Presi�n Arterial:</span>
+            <span class="value">{{ selectedRecord.pressure }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="detail-section">
+        <h3>Diagn�stico</h3>
+        <div class="diagnosis-box">
+          {{ selectedRecord.diagnosis }}
+        </div>
+      </div>
+
+      <div class="detail-section" *ngIf="selectedRecord.observations">
+        <h3>Observaciones</h3>
+        <div class="observations-box">
+          {{ selectedRecord.observations }}
+        </div>
+      </div>
+
+      <div class="detail-section" *ngIf="selectedRecord.additional_fields && selectedRecord.additional_fields.length > 0">
+        <h3>Informaci�n Adicional</h3>
+        <div class="detail-grid">
+          <div class="detail-item" *ngFor="let field of selectedRecord.additional_fields">
+            <span class="label">{{ field.key }}:</span>
+            <span class="value">{{ field.value }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-secondary" (click)="closeMedicalHistoryModal()">Cerrar</button>
+    </div>
+  </div>
+</div>

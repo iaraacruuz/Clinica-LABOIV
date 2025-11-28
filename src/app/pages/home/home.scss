@@ -1,27 +1,127 @@
-/*
- * SCSS para el componente Home.
- * Las clases de estilo principales se manejan con Tailwind CSS en el HTML.
- */
-
 .home-container {
-    // Asegura que ocupe todo el espacio que le da el <main>
+  min-height: 100vh;
+  background: linear-gradient(135deg, #4facfe, #00f2fe);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.hero {
+  background: white;
+  padding: 60px 50px;
+  border-radius: 20px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+  max-width: 700px;
+  text-align: center;
+  animation: fadeIn 1s ease-in-out;
+}
+
+.clinic-logo {
+  width: 120px;
+  height: 120px;
+  margin: 0 auto 30px;
+  
+  img {
     width: 100%;
     height: 100%;
+    object-fit: contain;
+    filter: drop-shadow(0 6px 16px rgba(52, 152, 219, 0.4));
+    animation: float 3s ease-in-out infinite;
+  }
 }
 
-.home-card {
-    // Aplicamos una animación de entrada personalizada
-    animation: fadeIn 0.8s ease-out;
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-15px); }
 }
 
-// Definición de la animación para la tarjeta
+.icon {
+  font-size: 60px;
+  margin-bottom: 20px;
+  display: block;
+}
+
+.hero h1 {
+  font-size: 3rem;
+  margin-bottom: 10px;
+  color: #2c3e50;
+}
+
+.subtitle {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #3498db;
+  margin-bottom: 20px;
+}
+
+.description {
+  font-size: 1rem;
+  color: #555;
+  line-height: 1.6;
+  margin-bottom: 40px;
+}
+
+.buttons {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+}
+
+.btn {
+  padding: 12px 25px;
+  border-radius: 50px;
+  font-weight: bold;
+  transition: all 0.3s ease;
+  text-decoration: none;
+}
+
+.btn.primary {
+  background: #3498db;
+  color: white;
+}
+
+.btn.primary:hover {
+  background: #217dbb;
+  transform: translateY(-3px);
+}
+
+.btn.secondary {
+  background: transparent;
+  border: 2px solid #3498db;
+  color: #3498db;
+}
+
+.btn.secondary:hover {
+  background: #3498db;
+  color: white;
+  transform: translateY(-3px);
+}
+
+.fade-in {
+  animation: fadeIn 1s ease-in-out;
+}
+
 @keyframes fadeIn {
-    from { 
-        opacity: 0; 
-        transform: translateY(20px); 
-    }
-    to { 
-        opacity: 1; 
-        transform: translateY(0); 
-    }
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 600px) {
+  .hero {
+    margin: 20px;
+    padding: 40px 20px;
+  }
+  .hero h1 {
+    font-size: 2.2rem;
+  }
+  .buttons {
+    flex-direction: column;
+  }
 }

@@ -1,0 +1,450 @@
+.solicitar-turno-container {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.page-title {
+  font-size: 2.5rem;
+  color: #2c3e50;
+  margin-bottom: 30px;
+  font-weight: 700;
+  text-align: center;
+}
+
+// ==================== LOADING ====================
+
+.loading-container {
+  text-align: center;
+  padding: 60px 20px;
+
+  .spinner {
+    width: 60px;
+    height: 60px;
+    border: 4px solid #f0f0f0;
+    border-top: 4px solid #3498db;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 20px;
+  }
+
+  p {
+    color: #666;
+    font-size: 1.1rem;
+    font-style: italic;
+  }
+}
+
+.spinner-small {
+  width: 20px;
+  height: 20px;
+  border: 2px solid #f0f0f0;
+  border-top: 2px solid #3498db;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  display: inline-block;
+  margin-right: 10px;
+}
+
+.loading-specialists, .loading-slots {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 30px;
+  color: #666;
+  font-style: italic;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+// ==================== FORMULARIO ====================
+
+.appointment-form {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 6px 30px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.form-step {
+  padding: 40px;
+  border-bottom: 2px solid #f8f9fa;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  h2 {
+    margin: 0 0 25px 0;
+    color: #2c3e50;
+    font-size: 1.8rem;
+    font-weight: 600;
+    padding-bottom: 10px;
+    border-bottom: 3px solid #3498db;
+    display: inline-block;
+  }
+}
+
+// ==================== ESPECIALIDADES ====================
+
+.specialty-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 20px;
+}
+
+.specialty-card {
+  background: #f8f9fa;
+  border: 2px solid #e9ecef;
+  border-radius: 12px;
+  padding: 25px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+
+  &:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(52, 152, 219, 0.15);
+    border-color: #3498db;
+  }
+
+  &.selected {
+    background: linear-gradient(135deg, #3498db, #2980b9);
+    color: white;
+    border-color: #2980b9;
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(52, 152, 219, 0.3);
+  }
+
+  .specialty-icon {
+    font-size: 2.5rem;
+  }
+
+  .specialty-name {
+    font-weight: 600;
+    font-size: 1.1rem;
+  }
+}
+
+// ==================== ESPECIALISTAS ====================
+
+.specialist-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.specialist-card {
+  background: #f8f9fa;
+  border: 2px solid #e9ecef;
+  border-radius: 12px;
+  padding: 25px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+
+  &:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(52, 152, 219, 0.15);
+    border-color: #3498db;
+  }
+
+  &.selected {
+    background: linear-gradient(135deg, #2ecc71, #27ae60);
+    color: white;
+    border-color: #27ae60;
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(46, 204, 113, 0.3);
+  }
+
+  .specialist-icon {
+    font-size: 3rem;
+    flex-shrink: 0;
+  }
+
+  .specialist-info {
+    flex: 1;
+
+    h3 {
+      margin: 0 0 5px 0;
+      font-size: 1.3rem;
+      font-weight: 600;
+    }
+
+    p {
+      margin: 0;
+      opacity: 0.8;
+      font-size: 0.9rem;
+    }
+  }
+}
+
+.no-specialists {
+  text-align: center;
+  padding: 40px;
+  color: #666;
+  font-style: italic;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+// ==================== PACIENTES (ADMIN) ====================
+
+.form-group {
+  margin-bottom: 20px;
+
+  .patient-select {
+    width: 100%;
+    padding: 15px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 1rem;
+    background: white;
+    transition: all 0.3s ease;
+
+    &:focus {
+      outline: none;
+      border-color: #3498db;
+      box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+    }
+  }
+}
+
+// ==================== HORARIOS ====================
+
+.time-slots {
+  max-height: 400px;
+  overflow-y: auto;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 20px;
+  background: #fafafa;
+}
+
+.date-group {
+  margin-bottom: 30px;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.date-header {
+  margin: 0 0 15px 0;
+  color: #2c3e50;
+  font-size: 1.3rem;
+  font-weight: 600;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #3498db;
+}
+
+.slots-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 10px;
+}
+
+.time-slot {
+  padding: 12px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  background: white;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s ease;
+
+  &:hover:not(:disabled) {
+    border-color: #3498db;
+    background: #e8f4f8;
+    transform: translateY(-2px);
+  }
+
+  &.selected {
+    background: linear-gradient(135deg, #f39c12, #e67e22);
+    color: white;
+    border-color: #e67e22;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(243, 156, 18, 0.3);
+  }
+
+  &:disabled {
+    background: #f8f9fa;
+    color: #aaa;
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+}
+
+.no-slots {
+  text-align: center;
+  padding: 40px;
+  color: #666;
+
+  .clinic-hours-info {
+    margin-top: 20px;
+    padding: 15px;
+    background: #e8f4f8;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    line-height: 1.6;
+  }
+}
+
+// ==================== CONFIRMACIÓN ====================
+
+.confirmation-step {
+  background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+}
+
+.appointment-summary {
+  background: white;
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  margin-bottom: 25px;
+
+  h3 {
+    margin: 0 0 20px 0;
+    color: #2c3e50;
+    font-size: 1.5rem;
+    font-weight: 600;
+  }
+}
+
+.summary-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #f0f0f0;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  strong {
+    color: #3498db;
+    font-weight: 600;
+    min-width: 120px;
+  }
+
+  span {
+    text-align: right;
+    color: #555;
+    font-weight: 500;
+  }
+}
+
+.appointment-note {
+  background: #e8f4f8;
+  padding: 20px;
+  border-radius: 8px;
+  border-left: 4px solid #3498db;
+  margin-top: 25px;
+
+  p {
+    margin: 0;
+    color: #2c3e50;
+    font-size: 0.95rem;
+    line-height: 1.6;
+  }
+}
+
+// ==================== BOTONES ====================
+
+.form-actions {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 25px;
+
+  .btn {
+    flex: 1;
+    padding: 15px 25px;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    &:not(:disabled):hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+    }
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, #2ecc71, #27ae60);
+    color: white;
+
+    &:hover:not(:disabled) {
+      box-shadow: 0 6px 20px rgba(46, 204, 113, 0.4);
+    }
+  }
+
+  .btn-secondary {
+    background: #f0f0f0;
+    color: #555;
+
+    &:hover:not(:disabled) {
+      background: #e0e0e0;
+    }
+  }
+}
+
+// ==================== RESPONSIVE ====================
+
+@media (max-width: 768px) {
+  .page-title {
+    font-size: 2rem;
+    margin-bottom: 20px;
+  }
+
+  .form-step {
+    padding: 25px;
+
+    h2 {
+      font-size: 1.5rem;
+    }
+  }
+
+  .specialty-grid, .specialist-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .slots-grid {
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  }
+
+  .summary-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 5px;
+
+    span {
+      text-align: left;
+    }
+  }
+
+  .form-actions {
+    flex-direction: column;
+
+    .btn {
+      width: 100%;
+    }
+  }
+}
