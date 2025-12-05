@@ -8,6 +8,8 @@ La Clínica Online es una aplicación que puede ser utilizada para registrar pac
 
 ![Logo](https://github.com/user-attachments/assets/59b571a3-c2b8-4c83-85f5-0b4e3bd2f3fb)
 Tocando el botón de "Registrarme", podemos elegir el registro como especialista, o como paciente
+
 ![Logo](https://github.com/user-attachments/assets/c979370b-90d3-42c1-a7f7-a12678bb40bd)
 ![Logo](https://github.com/user-attachments/assets/514eeeda-18f2-481e-80b8-3194cb1a2318)
+
 Una vez logueado (sea por registro o por login, también están disponibles los accesos rápidos), veremos el perfil del usuario logueado con algunos de sus datos.
