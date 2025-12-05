@@ -9,6 +9,7 @@ import { MessageService } from '../../services/message.service';
 interface Specialty {
   id: number;
   name: string;
+  image_url?: string;
 }
 
 interface Specialist {
@@ -16,6 +17,7 @@ interface Specialist {
   name: string;
   last_name: string;
   specialties: string[];
+  profile_image_url?: string;
 }
 
 interface TimeSlot {
@@ -49,6 +51,7 @@ export class SolicitarTurnoComponent implements OnInit {
   
   loading = false;
   loadingSlots = false;
+  expandedDates: Set<string> = new Set();
   
   readonly CLINIC_HOURS = {
     weekdays: { start: 8, end: 19 },
@@ -70,7 +73,7 @@ export class SolicitarTurnoComponent implements OnInit {
     await this.loadInitialData();
   }
 
-  // Carga datos iniciales del componente
+  /** Carga los datos iniciales necesarios según el rol del usuario */
   async loadInitialData() {
     try {
       this.loading = true;
@@ -108,6 +111,7 @@ export class SolicitarTurnoComponent implements OnInit {
     }
   }
 
+  /** Carga los especialistas aprobados que trabajan en la especialidad seleccionada */
   async loadSpecialists() {
     if (!this.selectedSpecialtyId) {
       this.specialists = [];
@@ -122,7 +126,7 @@ export class SolicitarTurnoComponent implements OnInit {
         .from('specialist_availability')
         .select(`
           specialist_id,
-          profiles!inner(id, name, last_name, is_approved)
+          profiles!inner(id, name, last_name, is_approved, profile_image_url)
         `)
         .eq('specialty_id', this.selectedSpecialtyId)
         .eq('profiles.is_approved', true);
@@ -136,7 +140,8 @@ export class SolicitarTurnoComponent implements OnInit {
             id: item.profiles.id,
             name: item.profiles.name,
             last_name: item.profiles.last_name,
-            specialties: [this.getSpecialtyName(this.selectedSpecialtyId)]
+            specialties: [this.getSpecialtyName(this.selectedSpecialtyId)],
+            profile_image_url: item.profiles.profile_image_url
           });
         }
       });
@@ -170,6 +175,7 @@ export class SolicitarTurnoComponent implements OnInit {
     }
   }
 
+  /** Carga los horarios disponibles del especialista seleccionado para los próximos días */
   async loadAvailableSlots() {
     if (!this.selectedSpecialistId || !this.selectedSpecialtyId) {
       this.availableSlots = [];
@@ -194,7 +200,7 @@ export class SolicitarTurnoComponent implements OnInit {
         return;
       }
       
-      // Generar slots para los próximos 15 días basados en disponibilidad
+      // Generar slots para los proximos 15 días basados en disponibilidad
       const slots: TimeSlot[] = [];
       const today = new Date();
       
@@ -206,10 +212,20 @@ export class SolicitarTurnoComponent implements OnInit {
         slots.push(...daySlots);
       }
       
-      // Verificar disponibilidad de cada slot (si ya está ocupado)
+      // 🔹 CRÍTICO: SIEMPRE verificar disponibilidad con datos FRESCOS de la BD
+      console.log('⏳ Consultando turnos ACTUALIZADOS desde la base de datos...');
       await this.checkSlotsAvailability(slots);
       
+      // Filtrar solo disponibles
+      const previousAvailable = this.availableSlots.length;
       this.availableSlots = slots.filter(slot => slot.available);
+      
+      const currentAvailable = this.availableSlots.length;
+      if (previousAvailable !== currentAvailable && previousAvailable > 0) {
+        console.log(`🔄 ACTUALIZACIÓN: Horarios disponibles cambiaron de ${previousAvailable} a ${currentAvailable}`);
+      }
+      
+      console.log(`📊 Total slots generados: ${slots.length}, Disponibles: ${this.availableSlots.length}, Ocupados: ${slots.length - this.availableSlots.length}`);
       
     } catch (error) {
       console.error('Error loading available slots:', error);
@@ -273,32 +289,83 @@ export class SolicitarTurnoComponent implements OnInit {
 
   private async checkSlotsAvailability(slots: TimeSlot[]) {
     try {
-      // Obtener turnos existentes del especialista
-      const existingAppointments = await this.appointmentsService.getSpecialistAppointments(this.selectedSpecialistId);
+      console.log('🔍 Verificando disponibilidad para especialista:', this.selectedSpecialistId);
+      
+      // 🔹 CONSULTA CON .maybeSingle() REMOVIDO - usar solo .select() para evitar RLS
+      // Usar el servicio de appointments que ya tiene la lógica correcta
+      const allAppointments = await this.appointmentsService.getSpecialistAppointments(this.selectedSpecialistId);
+      
+      // Filtrar manualmente los turnos activos (solicitados, aceptados, finalizados)
+      const existingAppointments = allAppointments.filter(apt => 
+        apt.status_id === 1 || apt.status_id === 2 || apt.status_id === 4
+      );
+      
+      console.log('📅 Turnos existentes encontrados:', existingAppointments?.length || 0);
+      console.log('📋 Detalle de turnos:', existingAppointments);
+      
+      if (!existingAppointments || existingAppointments.length === 0) {
+        console.log('✅ No hay turnos ocupados, todos los slots están disponibles');
+        return;
+      }
       
       // Marcar slots ocupados
+      let occupiedCount = 0;
       slots.forEach(slot => {
         const slotDateTime = new Date(slot.date);
         const [hours, minutes] = slot.time.split(':').map(Number);
         slotDateTime.setHours(hours, minutes, 0, 0);
+        const slotStart = slotDateTime.getTime();
+        const slotEnd = slotStart + (this.SLOT_DURATION * 60000);
         
         const isOccupied = existingAppointments.some(apt => {
-          if (apt.status_id === 5) return false; // Ignorar cancelados
+          // Reconstruir fecha completa del turno
+          let aptDateStr = apt.appointment_date;
+          if (apt.appointment_time) {
+            const dateOnly = apt.appointment_date.split('T')[0];
+            aptDateStr = `${dateOnly}T${apt.appointment_time}`;
+          }
           
-          const aptDate = new Date(apt.appointment_date);
-          const aptEnd = new Date(aptDate.getTime() + (apt.duration_minutes * 60000));
-          const slotEnd = new Date(slotDateTime.getTime() + (this.SLOT_DURATION * 60000));
+          const aptDate = new Date(aptDateStr);
+          const aptStart = aptDate.getTime();
+          const aptEnd = aptStart + ((apt.duration_minutes || 30) * 60000);
           
-          // Verificar superposición
-          return (slotDateTime < aptEnd && slotEnd > aptDate);
+          // Verificar superposición de horarios
+          const hasOverlap = (slotStart < aptEnd && slotEnd > aptStart);
+          
+          if (hasOverlap) {
+            console.log('❌ Slot ocupado:', {
+              slot: `${slot.formattedDate} ${slot.time}`,
+              slotStart: new Date(slotStart).toISOString(),
+              slotEnd: new Date(slotEnd).toISOString(),
+              turno: {
+                id: apt.id,
+                fecha_raw: apt.appointment_date,
+                fecha_time: apt.appointment_time,
+                fecha_reconstruida: aptDateStr,
+                aptStart: new Date(aptStart).toISOString(),
+                aptEnd: new Date(aptEnd).toISOString(),
+                status: apt.status_id,
+                paciente: apt.patient_id,
+                duration: apt.duration_minutes
+              }
+            });
+            occupiedCount++;
+          }
+          
+          return hasOverlap;
         });
         
         slot.available = !isOccupied;
       });
       
+      console.log(`✅ Slots disponibles: ${slots.filter(s => s.available).length}`);
+      console.log(`❌ Slots ocupados: ${occupiedCount}`);
+      
     } catch (error) {
-      console.error('Error checking slot availability:', error);
-      // En caso de error, asumir que todos están disponibles
+      console.error('❌ Error crítico verificando disponibilidad:', error);
+      // Por seguridad, marcar todos como NO disponibles si hay error
+      slots.forEach(slot => slot.available = false);
+      this.messageService.showError('Error al verificar disponibilidad de horarios');
     }
   }
 
@@ -317,6 +384,8 @@ export class SolicitarTurnoComponent implements OnInit {
     this.selectedTimeSlot = null;
     
     if (this.selectedSpecialistId) {
+      // 🔹 IMPORTANTE: Cargar horarios FRESCOS desde la BD
+      console.log('🔄 Cargando horarios disponibles desde la base de datos...');
       this.loadAvailableSlots();
     }
   }
@@ -356,6 +425,73 @@ export class SolicitarTurnoComponent implements OnInit {
       const [hours, minutes] = this.selectedTimeSlot.time.split(':').map(Number);
       appointmentDate.setHours(hours, minutes, 0, 0);
       
+      // VERIFICACIÓN DE ÚLTIMA HORA: Comprobar si el slot sigue disponible
+      console.log('🔒 Verificación final antes de crear turno...');
+      console.log('📅 Intentando crear turno para:', {
+        especialista: this.selectedSpecialistId,
+        fecha: appointmentDate.toISOString(),
+        fecha_legible: `${appointmentDate.toLocaleDateString('es-AR')} ${appointmentDate.toLocaleTimeString('es-AR')}`,
+        duracion: this.SLOT_DURATION
+      });
+      
+      // Usar el servicio para obtener todos los turnos del especialista
+      const allAppointments = await this.appointmentsService.getSpecialistAppointments(this.selectedSpecialistId);
+      
+      // Filtrar solo los activos
+      const conflictingAppointments = allAppointments.filter(apt => 
+        apt.status_id === 1 || apt.status_id === 2 || apt.status_id === 4
+      );
+      
+      console.log('📋 Turnos activos del especialista:', conflictingAppointments?.length || 0);
+      console.log('🗓️ Detalle de cada turno activo:');
+      conflictingAppointments.forEach((apt, index) => {
+        let aptDateStr = apt.appointment_date;
+        if (apt.appointment_time) {
+          const dateOnly = apt.appointment_date.split('T')[0];
+          aptDateStr = `${dateOnly}T${apt.appointment_time}`;
+        }
+        console.log(`   ${index + 1}. ${new Date(aptDateStr).toLocaleString('es-AR')} - Status: ${apt.status_id} - Paciente: ${apt.patient_id}`);
+      });
+      
+      const slotStart = appointmentDate.getTime();
+      const slotEnd = slotStart + (this.SLOT_DURATION * 60000);
+      
+      const hasConflict = (conflictingAppointments || []).some(apt => {
+        // Reconstruir fecha completa
+        let aptDateStr = apt.appointment_date;
+        if (apt.appointment_time) {
+          const dateOnly = apt.appointment_date.split('T')[0];
+          aptDateStr = `${dateOnly}T${apt.appointment_time}`;
+        }
+        
+        const aptDate = new Date(aptDateStr);
+        const aptStart = aptDate.getTime();
+        const aptEnd = aptStart + ((apt.duration_minutes || 30) * 60000);
+        
+        // Verificar superposición
+        const overlap = (slotStart < aptEnd && slotEnd > aptStart);
+        
+        if (overlap) {
+          console.log('⚠️ CONFLICTO DETECTADO:', {
+            intentando_crear: appointmentDate.toISOString(),
+            turno_existente: aptDateStr,
+            status_existente: apt.status_id
+          });
+        }
+        
+        return overlap;
+      });
+      
+      if (hasConflict) {
+        this.messageService.showWarning('❌ Lo sentimos, este horario acaba de ser reservado por otro paciente. Por favor seleccioná otro horario.');
+        // Recargar slots para mostrar la disponibilidad actualizada
+        await this.loadAvailableSlots();
+        this.selectedTimeSlot = null;
+        return;
+      }
+      
+      console.log('✅ No hay conflictos, procediendo a crear el turno...');
+      
       // Crear el turno
       await this.appointmentsService.createAppointment({
         patient_id: this.selectedPatientId || this.currentUser.id,
@@ -364,6 +500,12 @@ export class SolicitarTurnoComponent implements OnInit {
         appointment_date: appointmentDate.toISOString(),
         duration_minutes: this.SLOT_DURATION
       });
+      
+      console.log('🎉 Appointment created, reloading to verify...');
+      
+      // Verificar que el turno se guardó correctamente
+      const verifyAppointments = await this.appointmentsService.getSpecialistAppointments(this.selectedSpecialistId);
+      console.log('🔍 Verification - Specialist appointments after creation:', verifyAppointments);
       
       this.messageService.showSuccess('Turno solicitado exitosamente. El especialista debe aceptarlo para confirmar la cita.');
       this.resetForm();
@@ -418,5 +560,22 @@ export class SolicitarTurnoComponent implements OnInit {
 
   getGroupedSlots() {
     return this.groupSlotsByDate(this.availableSlots);
+  }
+
+  toggleDateExpansion(date: string) {
+    if (this.expandedDates.has(date)) {
+      this.expandedDates.delete(date);
+    } else {
+      this.expandedDates.add(date);
+    }
+  }
+
+  isDateExpanded(date: string): boolean {
+    return this.expandedDates.has(date);
+  }
+
+  hasSelectedTimeInDate(date: string): boolean {
+    if (!this.selectedTimeSlot) return false;
+    return this.selectedTimeSlot.formattedDate === date;
   }
 }

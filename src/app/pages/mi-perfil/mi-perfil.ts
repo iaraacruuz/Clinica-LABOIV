@@ -18,15 +18,22 @@ export class MiPerfilComponent {
   currentUser: UserProfileData | null = null;
   availabilities: any[] = [];
   specialties: any[] = [];
+  userSpecialties: any[] = []; // Especialidades del usuario
   isLoading = true;
   isEditingSchedules = false;
   loadingSchedules = false;
+  isEditingSpecialties = false;
+  selectedNewSpecialty: number | null = null;
+  customSpecialtyName = '';
   
   userImages: string[] = [];
   medicalHistory: MedicalHistoryRecord[] = [];
+  filteredMedicalHistory: MedicalHistoryRecord[] = [];
   loadingMedicalHistory = false;
   showMedicalHistoryModal = false;
   selectedRecord: MedicalHistoryRecord | null = null;
+  selectedSpecialistFilter: string = 'all';
+  availableSpecialists: { id: string; name: string }[] = [];
 
   weekDays = [
     { id: 1, name: 'Lunes', key: 'monday' },
@@ -75,7 +82,7 @@ export class MiPerfilComponent {
     this.loadProfile();
   }
 
-  // Carga el perfil del usuario actual
+  /** Carga el perfil del usuario actual y sus datos relacionados según su rol */
   async loadProfile() {
     try {
       this.isLoading = true;
@@ -96,6 +103,7 @@ export class MiPerfilComponent {
 
       if (this.currentUser.role === 'specialist') {
         await this.loadSpecialties();
+        await this.loadUserSpecialties();
         await this.loadAvailabilities();
       }
       
@@ -128,6 +136,24 @@ export class MiPerfilComponent {
     }
   }
 
+  async loadUserSpecialties() {
+    try {
+      const { data, error } = await this.supabaseService.client
+        .from('specialists_data')
+        .select(`
+          *,
+          specialties(id, name)
+        `)
+        .eq('user_id', this.currentUser!.id);
+
+      if (error) throw error;
+      this.userSpecialties = data || [];
+    } catch (error: any) {
+      console.error('Error loading user specialties:', error);
+      this.messageService.showError('Error al cargar tus especialidades: ' + error.message);
+    }
+  }
+
   async loadAvailabilities() {
     try {
       this.loadingSchedules = true;
@@ -152,7 +178,7 @@ export class MiPerfilComponent {
     }
   }
 
-  // Carga las imágenes del perfil del usuario
+  /** Carga las imágenes de perfil del usuario desde la base de datos */
   async loadUserImages() {
     try {
       if (!this.currentUser) return;
@@ -334,11 +360,32 @@ export class MiPerfilComponent {
     try {
       this.loadingMedicalHistory = true;
       this.medicalHistory = await this.medicalHistoryService.getPatientHistory(this.currentUser.id);
+      this.filteredMedicalHistory = [...this.medicalHistory];
+      
+      const specialistsMap = new Map<string, string>();
+      this.medicalHistory.forEach(record => {
+        if (record.specialist && record.specialist_id) {
+          const fullName = `${record.specialist.name} ${record.specialist.last_name}`;
+          specialistsMap.set(record.specialist_id, fullName);
+        }
+      });
+      
+      this.availableSpecialists = Array.from(specialistsMap.entries()).map(([id, name]) => ({ id, name }));
     } catch (error: any) {
       console.error('Error loading medical history:', error);
-      this.messageService.showError('Error al cargar la historia cl�nica');
+      this.messageService.showError('Error al cargar la historia clínica');
     } finally {
       this.loadingMedicalHistory = false;
+    }
+  }
+
+  filterMedicalHistoryBySpecialist() {
+    if (this.selectedSpecialistFilter === 'all') {
+      this.filteredMedicalHistory = [...this.medicalHistory];
+    } else {
+      this.filteredMedicalHistory = this.medicalHistory.filter(
+        record => record.specialist_id === this.selectedSpecialistFilter
+      );
     }
   }
 
@@ -353,14 +400,16 @@ export class MiPerfilComponent {
   }
 
   formatMedicalDate(dateString: string): string {
-    return new Date(dateString).toLocaleDateString('es-ES', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    if (!dateString) return 'Fecha no disponible';
+    try {
+      return new Date(dateString).toLocaleDateString('es-ES', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+      });
+    } catch {
+      return 'Fecha inválida';
+    }
   }
 
   async downloadMedicalHistoryPDF() {
@@ -387,6 +436,98 @@ export class MiPerfilComponent {
     } catch (error) {
       console.error('Error generating PDF:', error);
       this.messageService.showError('Error al generar el PDF');
+    }
+  }
+
+  toggleEditSpecialties() {
+    this.isEditingSpecialties = !this.isEditingSpecialties;
+    this.selectedNewSpecialty = null;
+    this.customSpecialtyName = '';
+  }
+
+  getAvailableSpecialties() {
+    const userSpecialtyIds = this.userSpecialties.map(us => us.specialties?.id);
+    return this.specialties.filter(s => !userSpecialtyIds.includes(s.id));
+  }
+
+  async addSpecialty() {
+    try {
+      if (!this.selectedNewSpecialty && !this.customSpecialtyName.trim()) {
+        this.messageService.showWarning('Debe seleccionar o ingresar una especialidad');
+        return;
+      }
+
+      let specialtyId = this.selectedNewSpecialty;
+
+      if (this.customSpecialtyName.trim()) {
+        const customName = this.customSpecialtyName.trim();
+        const exists = this.specialties.find(s => s.name.toLowerCase() === customName.toLowerCase());
+        
+        if (exists) {
+          specialtyId = exists.id;
+        } else {
+          const { data, error } = await this.supabaseService.client
+            .from('specialties')
+            .insert([{ name: customName }])
+            .select()
+            .single();
+
+          if (error) throw error;
+          specialtyId = data.id;
+          this.specialties.push(data);
+        }
+      }
+
+      if (!specialtyId) {
+        this.messageService.showWarning('Error al obtener el ID de la especialidad');
+        return;
+      }
+
+      const alreadyHas = this.userSpecialties.find(us => us.specialties?.id === specialtyId);
+      if (alreadyHas) {
+        this.messageService.showWarning('Ya tienes esta especialidad asociada');
+        return;
+      }
+
+      const { error } = await this.supabaseService.client
+        .from('specialists_data')
+        .insert([{
+          user_id: this.currentUser!.id,
+          specialty_id: specialtyId,
+          is_approved: true
+        }]);
+
+      if (error) throw error;
+
+      this.messageService.showSuccess('Especialidad agregada correctamente');
+      await this.loadUserSpecialties();
+      this.selectedNewSpecialty = null;
+      this.customSpecialtyName = '';
+      this.isEditingSpecialties = false;
+    } catch (error: any) {
+      console.error('Error adding specialty:', error);
+      this.messageService.showError('Error al agregar especialidad: ' + error.message);
+    }
+  }
+
+  async removeSpecialty(specialistDataId: number) {
+    try {
+      const confirm = window.confirm('¿Está seguro que desea eliminar esta especialidad? También se eliminarán los horarios asociados.');
+      if (!confirm) return;
+
+      const { error } = await this.supabaseService.client
+        .from('specialists_data')
+        .delete()
+        .eq('id', specialistDataId);
+
+      if (error) throw error;
+
+      this.messageService.showSuccess('Especialidad eliminada correctamente');
+      await this.loadUserSpecialties();
+      await this.loadAvailabilities();
+    } catch (error: any) {
+      console.error('Error removing specialty:', error);
+      this.messageService.showError('Error al eliminar especialidad: ' + error.message);
     }
   }
 }

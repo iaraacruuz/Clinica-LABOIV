@@ -12,6 +12,7 @@ export class AdminGuard implements CanActivate {
     private router: Router
   ) {}
 
+  /** Verifica que el usuario actual tenga rol de administrador */
   async canActivate(): Promise<boolean> {
 
     const { data: { user } } = await this.supabase.client.auth.getUser();

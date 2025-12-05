@@ -49,11 +49,7 @@ export interface SpecialistAvailability {
 export class AppointmentsService {
   constructor(private supabase: SupabaseService) {}
 
-  // ==================== PACIENTES ====================
-
-  /**
-   * Obtener todos los turnos de un paciente
-   */
+  /** Obtiene todos los turnos de un paciente con sus datos relacionados */
   async getPatientAppointments(patientId: string): Promise<Appointment[]> {
     try {
       const { data, error } = await this.supabase.client
@@ -64,7 +60,6 @@ export class AppointmentsService {
 
       if (error) throw error;
 
-      // Obtener datos relacionados manualmente
       const enrichedData = await Promise.all((data || []).map(async (apt: any) => {
         // Obtener datos del especialista
         const { data: specialistData } = await this.supabase.client
@@ -94,8 +89,24 @@ export class AppointmentsService {
           .eq('appointment_id', apt.id)
           .single();
 
+        // 🔹 IMPORTANTE: Reconstruir la fecha completa combinando appointment_date + appointment_time
+        let fullAppointmentDate = apt.appointment_date;
+        let separateTime = apt.appointment_time;
+        
+        if (apt.appointment_time) {
+          // Si tiene appointment_time separado, combinar
+          // appointment_date puede venir como "2024-12-05" o "2024-12-05T00:00:00"
+          const dateOnly = apt.appointment_date.includes('T') 
+            ? apt.appointment_date.split('T')[0] 
+            : apt.appointment_date;
+          
+          fullAppointmentDate = `${dateOnly}T${apt.appointment_time}`;
+        }
+
         return {
           ...apt,
+          appointment_date: fullAppointmentDate, // Fecha + hora completa para compatibilidad
+          appointment_time: separateTime, // Mantener la hora separada también
           specialist_name: specialistData?.name,
           specialist_last_name: specialistData?.last_name,
           specialty_name: specialtyData?.name,
@@ -111,10 +122,7 @@ export class AppointmentsService {
     }
   }
 
-  /**
-   * Cancelar turno (paciente)
-   * Status IDs: 1=Pendiente, 2=Aceptado, 3=Rechazado, 4=Realizado, 5=Cancelado, 6=No se presentó
-   */
+  /** Cancela un turno solicitado por el paciente */
   async cancelAppointmentAsPatient(appointmentId: string, reason: string, patientId: string): Promise<void> {
     try {
       const { error } = await this.supabase.client
@@ -132,9 +140,7 @@ export class AppointmentsService {
     }
   }
 
-  /**
-   * Calificar atención del especialista
-   */
+  /** Califica la atención recibida en un turno finalizado */
   async rateAppointment(appointmentId: string, rating: number, comment: string): Promise<void> {
     try {
       console.log('Rating appointment with data:', { appointmentId, rating, comment });
@@ -160,9 +166,7 @@ export class AppointmentsService {
     }
   }
 
-  /**
-   * Completar encuesta de satisfacción
-   */
+  /** Guarda las respuestas de la encuesta de satisfacción del paciente */
   async completeSurvey(appointmentId: string, surveyAnswers: any): Promise<void> {
     try {
       const { error } = await this.supabase.client
@@ -180,14 +184,57 @@ export class AppointmentsService {
     }
   }
 
-  // ==================== ESPECIALISTAS ====================
-
-  /**
-   * Obtener todos los turnos de un especialista
-   */
+  /** Obtiene los turnos de un especialista verificando disponibilidad (sin exponer datos sensibles) */
   async getSpecialistAppointments(specialistId: string): Promise<Appointment[]> {
     try {
       console.log('Loading appointments for specialist:', specialistId);
+      
+      const { data, error } = await this.supabase.client
+        .rpc('check_specialist_availability', { 
+          p_specialist_id: specialistId 
+        });
+
+      console.log('Specialist availability data:', data);
+      console.log('Specialist availability error:', error);
+
+      if (error) {
+        console.error('⚠️ Error al verificar disponibilidad:', error);
+        return [];
+      }
+
+      const appointments: Appointment[] = (data || []).map((apt: any) => {
+        let fullAppointmentDate = apt.appointment_date;
+        if (apt.appointment_time) {
+          const dateOnly = apt.appointment_date.split('T')[0];
+          fullAppointmentDate = `${dateOnly}T${apt.appointment_time}`;
+        }
+
+        return {
+          id: '',
+          patient_id: '',
+          specialist_id: specialistId,
+          specialty_id: 0,
+          appointment_date: fullAppointmentDate,
+          duration_minutes: apt.duration_minutes,
+          status_id: apt.status_id,
+          created_at: '',
+          updated_at: ''
+        } as Appointment;
+      });
+
+      console.log('Processed appointments for availability check:', appointments);
+      return appointments;
+
+    } catch (error) {
+      console.error('Exception checking specialist availability:', error);
+      return [];
+    }
+  }
+
+  /** Obtiene todos los turnos completos de un especialista con datos relacionados (para uso del especialista/admin) */
+  async getSpecialistAppointmentsFull(specialistId: string): Promise<Appointment[]> {
+    try {
+      console.log('Loading FULL appointments for specialist:', specialistId);
       
       const { data, error } = await this.supabase.client
         .from('appointments')
@@ -198,7 +245,10 @@ export class AppointmentsService {
       console.log('Specialist appointments raw data:', data);
       console.log('Specialist appointments error:', error);
 
-      if (error) throw error;
+      if (error) {
+        console.error('⚠️ Error al obtener turnos (posible problema de RLS):', error);
+        return [];
+      }
 
       // Ahora obtenemos los datos relacionados manualmente
       const enrichedData = await Promise.all((data || []).map(async (apt: any) => {
@@ -230,8 +280,21 @@ export class AppointmentsService {
           .eq('appointment_id', apt.id)
           .single();
 
+        let fullAppointmentDate = apt.appointment_date;
+        let separateTime = apt.appointment_time;
+        
+        if (apt.appointment_time) {
+          const dateOnly = apt.appointment_date.includes('T') 
+            ? apt.appointment_date.split('T')[0] 
+            : apt.appointment_date;
+          
+          fullAppointmentDate = `${dateOnly}T${apt.appointment_time}`;
+        }
+
         return {
           ...apt,
+          appointment_date: fullAppointmentDate,
+          appointment_time: separateTime,
           patient_name: patientData?.name,
           patient_last_name: patientData?.last_name,
           specialty_name: specialtyData?.name,
@@ -244,18 +307,16 @@ export class AppointmentsService {
       return enrichedData;
     } catch (error) {
       console.error('Error getting specialist appointments:', error);
-      throw error;
+      return [];
     }
   }
 
-  /**
-   * Aceptar turno (especialista)
-   */
+  /** Acepta un turno solicitado */
   async acceptAppointment(appointmentId: string): Promise<void> {
     try {
       const { error } = await this.supabase.client
         .from('appointments')
-        .update({ status_id: 2 }) // Aceptado
+        .update({ status_id: 2 })
         .eq('id', appointmentId);
 
       if (error) throw error;
@@ -265,15 +326,13 @@ export class AppointmentsService {
     }
   }
 
-  /**
-   * Rechazar turno (especialista)
-   */
+  /** Rechaza un turno solicitado con un motivo */
   async rejectAppointment(appointmentId: string, reason: string): Promise<void> {
     try {
       const { error } = await this.supabase.client
         .from('appointments')
         .update({
-          status_id: 3, // Rechazado
+          status_id: 3,
           rejection_reason: reason
         })
         .eq('id', appointmentId);
@@ -285,9 +344,7 @@ export class AppointmentsService {
     }
   }
 
-  /**
-   * Cancelar turno (especialista)
-   */
+  /** Cancela un turno como especialista con un motivo */
   async cancelAppointmentAsSpecialist(appointmentId: string, reason: string, specialistId: string): Promise<void> {
     try {
       const { error } = await this.supabase.client
@@ -305,15 +362,13 @@ export class AppointmentsService {
     }
   }
 
-  /**
-   * Finalizar turno (especialista)
-   */
+  /** Finaliza un turno agregando la reseña del especialista */
   async completeAppointment(appointmentId: string, review: string): Promise<void> {
     try {
       const { error } = await this.supabase.client
         .from('appointments')
         .update({
-          status_id: 4, // Realizado
+          status_id: 4,
           specialist_review: review
         })
         .eq('id', appointmentId);
@@ -369,8 +424,17 @@ export class AppointmentsService {
           .eq('id', apt.status_id)
           .single();
 
+        // 🔹 IMPORTANTE: Reconstruir la fecha completa combinando appointment_date + appointment_time
+        let fullAppointmentDate = apt.appointment_date;
+        if (apt.appointment_time) {
+          // Si tiene appointment_time separado, combinar
+          const dateOnly = apt.appointment_date.split('T')[0]; // YYYY-MM-DD
+          fullAppointmentDate = `${dateOnly}T${apt.appointment_time}`;
+        }
+
         return {
           ...apt,
+          appointment_date: fullAppointmentDate, // Fecha + hora completa
           patient_name: patientData?.name,
           patient_last_name: patientData?.last_name,
           specialist_name: specialistData?.name,
@@ -424,16 +488,21 @@ export class AppointmentsService {
         throw new Error('Appointment date is required');
       }
 
+      const appointmentData = {
+        patient_id: appointment.patient_id,
+        specialist_id: appointment.specialist_id,
+        specialty_id: appointment.specialty_id,
+        appointment_date: appointmentDate,
+        appointment_time: appointmentTime,
+        duration_minutes: appointment.duration_minutes || 30,
+        status_id: 1
+      };
+
+      console.log('📝 Creating appointment with data:', appointmentData);
+
       const { data, error } = await this.supabase.client
         .from('appointments')
-        .insert([{
-          patient_id: appointment.patient_id,
-          specialist_id: appointment.specialist_id,
-          specialty_id: appointment.specialty_id,
-          appointment_date: appointmentDate,
-          appointment_time: appointmentTime,
-          status_id: 1
-        }])
+        .insert([appointmentData])
         .select()
         .single();
 
@@ -442,6 +511,8 @@ export class AppointmentsService {
         console.error('Error details:', JSON.stringify(error, null, 2));
         throw error;
       }
+      
+      console.log('✅ Appointment created successfully:', data);
       return data.id;
     } catch (error) {
       console.error('Error creating appointment:', error);

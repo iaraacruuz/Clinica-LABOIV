@@ -438,6 +438,17 @@
   }
 }
 
+// ==================== CONTADOR DE CARACTERES ====================
+
+.char-counter {
+  display: block;
+  text-align: right;
+  font-size: 0.85rem;
+  color: #777;
+  margin-top: 5px;
+  font-style: italic;
+}
+
 // ==================== RESPONSIVE ====================
 
 @media (max-width: 768px) {

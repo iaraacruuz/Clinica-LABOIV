@@ -12,7 +12,6 @@ import { CommonModule } from '@angular/common';
 export class HomeComponent {
   constructor(private router: Router) {}
 
-  // Método de navegación que usan los botones
   navigateTo(route: string): void {
     this.router.navigate([`/${route}`]);
   }

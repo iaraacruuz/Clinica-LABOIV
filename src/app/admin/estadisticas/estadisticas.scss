@@ -1,0 +1,395 @@
+.estadisticas-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 2rem;
+
+  .header {
+    text-align: center;
+    margin-bottom: 2rem;
+
+    h1 {
+      font-size: 2.5rem;
+      color: #2c3e50;
+      margin-bottom: 0.5rem;
+      font-weight: 700;
+    }
+
+    .subtitle {
+      font-size: 1.1rem;
+      color: #7f8c8d;
+    }
+  }
+
+  // Tabs Navigation
+  .tabs {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 2rem;
+    overflow-x: auto;
+    padding-bottom: 0.5rem;
+
+    .tab-button {
+      padding: 1rem 1.5rem;
+      background: white;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px 8px 0 0;
+      cursor: pointer;
+      font-size: 1rem;
+      font-weight: 500;
+      color: #5f6368;
+      transition: all 0.3s ease;
+      white-space: nowrap;
+
+      &:hover {
+        background: #f5f5f5;
+        border-color: #3498db;
+      }
+
+      &.active {
+        background: #3498db;
+        color: white;
+        border-color: #3498db;
+        box-shadow: 0 2px 8px rgba(52, 152, 219, 0.3);
+      }
+    }
+  }
+
+  .content {
+    background: white;
+    border-radius: 0 12px 12px 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    padding: 2rem;
+    min-height: 500px;
+
+    .loading {
+      text-align: center;
+      padding: 3rem;
+
+      .spinner {
+        width: 50px;
+        height: 50px;
+        border: 4px solid #f3f4f6;
+        border-top: 4px solid #3498db;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 1rem;
+      }
+
+      p {
+        color: #7f8c8d;
+        font-size: 1.1rem;
+      }
+    }
+
+    .error-message {
+      text-align: center;
+      padding: 2rem;
+      color: #e74c3c;
+      font-size: 1.1rem;
+    }
+
+    // Chart Sections
+    .chart-section {
+      .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+        flex-wrap: wrap;
+        gap: 1rem;
+
+        h2 {
+          font-size: 1.8rem;
+          color: #2c3e50;
+          margin: 0;
+        }
+
+        h3 {
+          font-size: 1.3rem;
+          color: #34495e;
+          margin-bottom: 1rem;
+          text-align: center;
+        }
+
+        .date-filters {
+          display: flex;
+          gap: 1rem;
+          align-items: center;
+
+          label {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            font-weight: 500;
+            color: #5f6368;
+
+            input[type="date"] {
+              padding: 0.5rem;
+              border: 1px solid #ddd;
+              border-radius: 6px;
+              font-size: 0.95rem;
+            }
+          }
+        }
+
+        .export-buttons {
+          display: flex;
+          gap: 0.75rem;
+
+          .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+
+            &.btn-excel {
+              background: #1d6f42;
+              color: white;
+
+              &:hover {
+                background: #155c37;
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(29, 111, 66, 0.3);
+              }
+            }
+
+            &.btn-pdf {
+              background: #d32f2f;
+              color: white;
+
+              &:hover {
+                background: #b71c1c;
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(211, 47, 47, 0.3);
+              }
+            }
+          }
+        }
+      }
+
+      .chart-container {
+        padding: 1.5rem;
+        background: #fafafa;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+
+        .ct-chart {
+          height: 450px;
+          padding-bottom: 60px;
+        }
+      }
+
+      .charts-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+        gap: 2rem;
+      }
+    }
+
+    // Log Section
+    .log-section {
+      .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+        flex-wrap: wrap;
+        gap: 1rem;
+
+        h2 {
+          font-size: 1.8rem;
+          color: #2c3e50;
+          margin: 0;
+        }
+
+        .export-buttons {
+          display: flex;
+          gap: 0.75rem;
+
+          .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+
+            &.btn-excel {
+              background: #1d6f42;
+              color: white;
+
+              &:hover {
+                background: #155c37;
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(29, 111, 66, 0.3);
+              }
+            }
+
+            &.btn-pdf {
+              background: #d32f2f;
+              color: white;
+
+              &:hover {
+                background: #b71c1c;
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(211, 47, 47, 0.3);
+              }
+            }
+          }
+        }
+      }
+
+      .table-container {
+        overflow-x: auto;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+
+        .logs-table {
+          width: 100%;
+          border-collapse: collapse;
+
+          thead {
+            background: #3498db;
+            
+            tr th {
+              padding: 1rem;
+              text-align: left;
+              color: white;
+              font-weight: 600;
+              font-size: 0.95rem;
+            }
+          }
+
+          tbody {
+            tr {
+              border-bottom: 1px solid #e0e0e0;
+              transition: background 0.2s ease;
+
+              &:hover {
+                background: #f5f9fc;
+              }
+
+              td {
+                padding: 1rem;
+                color: #5f6368;
+
+                &.no-data {
+                  text-align: center;
+                  padding: 2rem;
+                  color: #9e9e9e;
+                  font-style: italic;
+                }
+
+                .role-badge {
+                  display: inline-block;
+                  padding: 0.25rem 0.75rem;
+                  border-radius: 12px;
+                  font-size: 0.85rem;
+                  font-weight: 600;
+                  text-transform: capitalize;
+
+                  &.role-admin {
+                    background: #ffebee;
+                    color: #c62828;
+                  }
+
+                  &.role-specialist {
+                    background: #e3f2fd;
+                    color: #1565c0;
+                  }
+
+                  &.role-patient {
+                    background: #e8f5e9;
+                    color: #2e7d32;
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+// Chartist customization - CRITICAL STYLES
+:host ::ng-deep {
+  .ct-chart {
+    // Labels
+    .ct-label {
+      font-size: 0.85rem;
+      color: #5f6368;
+      fill: #5f6368;
+      font-weight: 500;
+    }
+
+    // Grid lines
+    .ct-grid {
+      stroke: #e0e0e0;
+      stroke-width: 1px;
+      stroke-dasharray: 2px;
+    }
+
+    // Bars - Series A (Primary)
+    .ct-series-a {
+      .ct-bar {
+        stroke: #3498db !important;
+        stroke-width: 40px;
+        stroke-linecap: round;
+      }
+    }
+
+    // Bars - Series B (Secondary, if needed)
+    .ct-series-b {
+      .ct-bar {
+        stroke: #2ecc71 !important;
+        stroke-width: 40px;
+        stroke-linecap: round;
+      }
+    }
+
+    // Points for line charts (if used)
+    .ct-point {
+      stroke: #3498db !important;
+      stroke-width: 10px;
+      stroke-linecap: round;
+    }
+
+    // Lines for line charts (if used)
+    .ct-line {
+      stroke: #3498db !important;
+      stroke-width: 3px;
+      fill: none;
+    }
+  }
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@media (max-width: 768px) {
+  .estadisticas-container {
+    padding: 1rem;
+
+    .header h1 {
+      font-size: 2rem;
+    }
+
+    .content {
+      padding: 1rem;
+
+      .chart-container {
+        padding: 0.5rem;
+      }
+    }
+  }
+}

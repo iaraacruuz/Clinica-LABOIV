@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -6,24 +6,42 @@ import { SupabaseService } from '../../services/supabase.service';
 import { AuthService } from '../../services/auth';
 import { MessageService } from '../../services/message.service';
 import { ConfirmationModalComponent } from '../../shared/confirmation-modal/confirmation-modal';
+import { slideInFromLeft, fadeIn } from '../../animations';
+
+interface QuickAccessUser {
+  email: string;
+  password: string;
+  label: string;
+  photoUrl: string;
+  color: string;
+}
 
 @Component({
   selector: 'app-login',
   standalone: true,
   imports: [CommonModule, FormsModule, ConfirmationModalComponent],
   templateUrl: './login.html',
-  styleUrls: ['./login.scss']
+  styleUrls: ['./login.scss'],
+  animations: [slideInFromLeft, fadeIn]
 })
-export class LoginComponent {
+export class LoginComponent implements OnInit {
   email = '';
   password = '';
   showBackConfirmation = false;
   
-  // Validaciones en tiempo real
   emailError = '';
   passwordError = '';
   emailTouched = false;
   passwordTouched = false;
+
+  quickAccessUsers: QuickAccessUser[] = [
+    { email: 'bebote3251@docsfy.com', password: '123456', label: 'Paciente 1', photoUrl: '', color: '#4CAF50' },
+    { email: 'iarazoecruz@hotmail.com', password: '123456', label: 'Paciente 2', photoUrl: '', color: '#8BC34A' },
+    { email: 'juanlopez426@hotmail.com', password: '123456', label: 'Paciente 3', photoUrl: '', color: '#CDDC39' },
+    { email: 'lauragallo555@hotmail.com', password: '123456', label: 'Dra. Gallo', photoUrl: '', color: '#2196F3' },
+    { email: 'adrianaalv36@hotmail.com', password: '123456', label: 'Dra. Álvarez', photoUrl: '', color: '#03A9F4' },
+    { email: 'admclinica456@gmail.com', password: '123456', label: 'Admin', photoUrl: '', color: '#9C27B0' }
+  ];
 
   constructor(
     private supabase: SupabaseService,
@@ -32,13 +50,46 @@ export class LoginComponent {
     private messageService: MessageService
   ) {}
 
+  async ngOnInit() {
+    await this.loadQuickAccessPhotos();
+  }
+
+  async loadQuickAccessPhotos() {
+    try {
+      console.log('🔍 Loading quick access photos from bucket...');
+      
+      for (const user of this.quickAccessUsers) {
+        const { data: profileData, error: profileError } = await this.supabase.client
+          .from('profiles')
+          .select('id, profile_image_url')
+          .eq('email', user.email)
+          .single();
+
+        if (profileError) {
+          console.error(`❌ Error loading profile for ${user.email}:`, profileError);
+          continue;
+        }
+
+        console.log(`✅ Profile data for ${user.email}:`, profileData);
+
+        // El campo correcto es profile_image_url y ya contiene la URL completa
+        if (profileData.profile_image_url) {
+          user.photoUrl = profileData.profile_image_url;
+          console.log(`✅ Photo URL for ${user.email}:`, user.photoUrl);
+        }
+      }
+      
+      console.log('📸 All users loaded:', this.quickAccessUsers);
+    } catch (error) {
+      console.error('Error loading quick access photos:', error);
+    }
+  }
+
+  /** Inicia sesión y redirige al dashboard o muestra errores según el caso */
   async login() {
     try {
-      // Call AuthService.iniciarSesion which handles ALL auth flow
-      // (login, profile creation, validation) in a serialized manner
       await this.authService.iniciarSesion(this.email, this.password);
       
-      // Redirect to dashboard for all authenticated users
       this.router.navigate(['/dashboard']);
     } catch (err: any) {
       const errorMsg = err.message || 'Error desconocido';
@@ -62,22 +113,11 @@ export class LoginComponent {
     }
   }
 
-  // Función para accesos rápidos
-  quickAccess(role: 'patient' | 'specialist' | 'admin') {
-    switch(role) {
-      case 'patient':
-        this.email = 'paciente@clinica.com';
-        this.password = '123456';
-        break;
-      case 'specialist':
-        this.email = 'especialista@clinica.com';
-        this.password = '123456';
-        break;
-      case 'admin':
-        this.email = 'admin@clinica.com';
-        this.password = '123456';
-        break;
-    }
+  /** Autentica al usuario usando las credenciales de acceso rápido */
+  async quickLogin(email: string, password: string) {
+    this.email = email;
+    this.password = password;
+    await this.login();
   }
 
   goToRegister() {

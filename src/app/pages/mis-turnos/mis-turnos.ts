@@ -17,14 +17,11 @@ export class MisTurnosComponent implements OnInit {
   appointments: Appointment[] = [];
   filteredAppointments: Appointment[] = [];
   
-  // Filtro global
   searchText: string = '';
   
-  // Estado
   loading: boolean = true;
   currentUserId: string = '';
   
-  // Modales
   showCancelModal: boolean = false;
   showRatingModal: boolean = false;
   showReviewModal: boolean = false;
@@ -33,18 +30,16 @@ export class MisTurnosComponent implements OnInit {
   selectedAppointment: Appointment | null = null;
   cancellationReason: string = '';
   
-  // Calificación
   rating: number = 0;
   patientComment: string = '';
   
-  // Encuesta
   surveyAnswers = {
-    question1: '', // ¿Cómo calificaría la atención recibida?
-    question2: '', // ¿El especialista fue puntual?
-    question3: '', // ¿El especialista explicó claramente su diagnóstico?
-    question4: '', // ¿Recomendaría este especialista?
-    question5: '', // ¿Las instalaciones de la clínica fueron adecuadas?
-    question6: ''  // Comentarios adicionales
+    question1: '',
+    question2: '',
+    question3: '',
+    question4: '',
+    question5: '',
+    question6: ''
   };
   
 
@@ -86,6 +81,7 @@ export class MisTurnosComponent implements OnInit {
     }
   }
 
+  /** Filtra los turnos según el texto de búsqueda ingresado */
   applyFilters() {
     if (!this.searchText.trim()) {
       this.filteredAppointments = [...this.appointments];
@@ -95,7 +91,6 @@ export class MisTurnosComponent implements OnInit {
     const searchTerm = this.searchText.toLowerCase().trim();
     
     this.filteredAppointments = this.appointments.filter(apt => {
-      // Buscar en datos básicos del turno
       const basicMatch = 
         apt.specialty_name?.toLowerCase().includes(searchTerm) ||
         `${apt.specialist_name} ${apt.specialist_last_name}`.toLowerCase().includes(searchTerm) ||
@@ -107,7 +102,6 @@ export class MisTurnosComponent implements OnInit {
         apt.cancellation_reason?.toLowerCase().includes(searchTerm) ||
         apt.rejection_reason?.toLowerCase().includes(searchTerm);
 
-      // Buscar en historia clínica si existe
       if (apt.medical_history) {
         const mh = apt.medical_history;
         const medicalMatch = 
@@ -118,7 +112,6 @@ export class MisTurnosComponent implements OnInit {
           mh.diagnosis?.toLowerCase().includes(searchTerm) ||
           mh.observations?.toLowerCase().includes(searchTerm);
 
-        // Buscar en campos adicionales dinámicos
         const additionalFieldsMatch = mh.additional_fields?.some((field: any) => 
           field.key?.toLowerCase().includes(searchTerm) ||
           field.value?.toLowerCase().includes(searchTerm)
@@ -133,30 +126,25 @@ export class MisTurnosComponent implements OnInit {
     });
   }
 
-  // ==================== ACCIONES ====================
-  // Status IDs: 1=Pendiente, 2=Aceptado, 3=Rechazado, 4=Realizado, 5=Cancelado, 6=No se presentó
-
+  /** Verifica si el paciente puede cancelar el turno */
   canCancel(appointment: Appointment): boolean {
-    // Solo si el turno NO fue realizado (status_id !== 4)
-    return appointment.status_id !== 4 && appointment.status_id !== 3 && appointment.status_id !== 5;
+    return appointment.status_id === 1 || appointment.status_id === 2;
   }
 
+  /** Verifica si hay una reseña del especialista para mostrar */
   canViewReview(appointment: Appointment): boolean {
-    // Solo si el turno tiene reseña del especialista
     return !!appointment.specialist_review;
   }
 
   canCompleteSurvey(appointment: Appointment): boolean {
-    // Solo si el turno está realizado, tiene reseña y no completó la encuesta
     return appointment.status_id === 4 && !!appointment.specialist_review && !appointment.survey_completed;
   }
 
   canRate(appointment: Appointment): boolean {
-    // Solo si el turno está realizado y no ha calificado
     return appointment.status_id === 4 && !appointment.patient_rating;
   }
 
-  // Cancelar turno
+  /** Abre el modal para cancelar un turno */
   openCancelModal(appointment: Appointment) {
     this.selectedAppointment = appointment;
     this.cancellationReason = '';
@@ -274,6 +262,23 @@ export class MisTurnosComponent implements OnInit {
     this.rating = stars;
   }
 
+  onCommentInput(event: Event) {
+    const textarea = event.target as HTMLTextAreaElement;
+    const lines = textarea.value.split('\n');
+    
+    // Limitar a 5 líneas
+    if (lines.length > 5) {
+      this.patientComment = lines.slice(0, 5).join('\n');
+      textarea.value = this.patientComment;
+    }
+    
+    // Limitar a 300 caracteres
+    if (this.patientComment.length > 300) {
+      this.patientComment = this.patientComment.substring(0, 300);
+      textarea.value = this.patientComment;
+    }
+  }
+
   async submitRating() {
     if (!this.selectedAppointment || this.rating === 0) {
       this.messageService.showWarning('Debe seleccionar una calificación (1-5 estrellas)');
@@ -329,23 +334,52 @@ export class MisTurnosComponent implements OnInit {
   }
 
   formatDate(dateString: string): string {
-    // dateString es DATE (YYYY-MM-DD)
-    // Agregar T00:00:00 para evitar problemas de zona horaria
-    const d = new Date(dateString + 'T00:00:00');
-    return d.toLocaleDateString('es-AR', { 
-      year: 'numeric', 
-      month: '2-digit', 
-      day: '2-digit' 
-    });
+    if (!dateString) return 'Fecha no disponible';
+    
+    try {
+      // dateString puede ser DATE (YYYY-MM-DD) o TIMESTAMP (YYYY-MM-DDTHH:MM:SS)
+      // Extraer solo la parte de fecha
+      const dateOnly = dateString.includes('T') ? dateString.split('T')[0] : dateString;
+      
+      // Agregar T00:00:00 para evitar problemas de zona horaria
+      const d = new Date(dateOnly + 'T00:00:00');
+      
+      if (isNaN(d.getTime())) {
+        console.error('Invalid date:', dateString);
+        return 'Fecha inválida';
+      }
+      
+      return d.toLocaleDateString('es-AR', { 
+        year: 'numeric', 
+        month: '2-digit', 
+        day: '2-digit' 
+      });
+    } catch (error) {
+      console.error('Error formatting date:', error, dateString);
+      return 'Error en fecha';
+    }
   }
 
   formatTime(timeString: string): string {
-    // timeString es TIME (HH:MM:SS)
-    // Crear una fecha arbitraria solo para formatear la hora
-    const d = new Date(`2000-01-01T${timeString}`);
-    return d.toLocaleTimeString('es-AR', { 
-      hour: '2-digit', 
-      minute: '2-digit' 
-    });
+    if (!timeString) return '';
+    
+    try {
+      // timeString es TIME (HH:MM:SS)
+      // Crear una fecha arbitraria solo para formatear la hora
+      const d = new Date(`2000-01-01T${timeString}`);
+      
+      if (isNaN(d.getTime())) {
+        console.error('Invalid time:', timeString);
+        return 'Hora inválida';
+      }
+      
+      return d.toLocaleTimeString('es-AR', { 
+        hour: '2-digit', 
+        minute: '2-digit' 
+      });
+    } catch (error) {
+      console.error('Error formatting time:', error, timeString);
+      return '';
+    }
   }
 }

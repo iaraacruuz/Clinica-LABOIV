@@ -37,7 +37,6 @@ export class UsuariosAdminComponent implements OnInit {
   showHistoryModal = false;
   showDetailModal = false;
 
-  // Filters
   roleFilter: string = 'all';
   searchTerm: string = '';
 
@@ -72,15 +71,14 @@ export class UsuariosAdminComponent implements OnInit {
     }
   }
 
+  /** Aplica los filtros de rol y búsqueda para mostrar usuarios */
   applyFilters() {
     let filtered = [...this.allUsers];
 
-    // Role filter
     if (this.roleFilter !== 'all') {
       filtered = filtered.filter(user => user.role === this.roleFilter);
     }
 
-    // Search filter
     if (this.searchTerm.trim()) {
       const term = this.searchTerm.toLowerCase().trim();
       filtered = filtered.filter(user => 
@@ -187,6 +185,114 @@ export class UsuariosAdminComponent implements OnInit {
       console.error('Error exporting to Excel:', error);
       this.messageService.showError('Error al generar el archivo Excel');
     }
+  }
+
+  async exportPatientAppointments(patient: User) {
+    if (patient.role !== 'patient') {
+      this.messageService.showInfo('Esta funcionalidad es solo para pacientes');
+      return;
+    }
+
+    try {
+      console.log('📊 Starting export for patient:', patient.name, patient.last_name, patient.id);
+
+      // Get all appointments for this patient
+      const { data: appointments, error: appointmentsError } = await this.supabase.client
+        .from('appointments')
+        .select('*')
+        .eq('patient_id', patient.id);
+
+      console.log('📊 Raw appointments:', appointments);
+      if (appointments && appointments.length > 0) {
+        console.log('📊 First appointment structure:', appointments[0]);
+      }
+
+      if (appointmentsError) {
+        console.error('Error fetching appointments:', appointmentsError);
+        this.messageService.showError('Error al obtener los turnos: ' + appointmentsError.message);
+        return;
+      }
+
+      if (!appointments || appointments.length === 0) {
+        this.messageService.showInfo('El paciente no tiene turnos registrados');
+        return;
+      }
+
+      // Get unique specialty and specialist IDs directly from appointments
+      const specialtyIds = [...new Set(appointments.map(a => a.specialty_id).filter(Boolean))];
+      const specialistIds = [...new Set(appointments.map(a => a.specialist_id).filter(Boolean))];
+
+      console.log('🏥 Specialty IDs:', specialtyIds);
+      console.log('👨‍⚕️ Specialist IDs:', specialistIds);
+
+      // Get specialties
+      const { data: specialties } = await this.supabase.client
+        .from('specialties')
+        .select('id, name')
+        .in('id', specialtyIds);
+
+      console.log('🏥 Specialties:', specialties);
+
+      // Get specialists
+      const { data: specialists } = await this.supabase.client
+        .from('profiles')
+        .select('id, name, last_name')
+        .in('id', specialistIds);
+
+      console.log('👨‍⚕️ Specialists:', specialists);
+
+      // Create lookup maps
+      const specialtyMap = new Map(specialties?.map(s => [s.id, s.name]) || []);
+      const specialistMap = new Map(specialists?.map(s => [s.id, s]) || []);
+
+      // Transform appointments with full data
+      const transformedAppointments = appointments.map((apt: any) => {
+        const specialtyName = specialtyMap.get(apt.specialty_id);
+        const specialist = specialistMap.get(apt.specialist_id);
+
+        return {
+          appointment_date: apt.appointment_date,
+          appointment_time: apt.appointment_time,
+          specialty_name: specialtyName || 'N/A',
+          specialist_name: specialist?.name || 'N/A',
+          specialist_last_name: specialist?.last_name || '',
+          status_id: apt.status_id,
+          duration_minutes: apt.duration_minutes,
+          comment: apt.specialist_review || apt.patient_feedback || 'Sin comentarios',
+          rating: apt.patient_rating || null
+        };
+      });
+
+      // Sort by date
+      transformedAppointments.sort((a, b) => {
+        return new Date(b.appointment_date).getTime() - new Date(a.appointment_date).getTime();
+      });
+
+      console.log('✅ Final transformed appointments:', transformedAppointments);
+
+      // Export to Excel
+      this.excelService.exportPatientAppointmentsToExcel(
+        patient.name,
+        patient.last_name,
+        transformedAppointments
+      );
+
+      this.messageService.showSuccess('Excel de turnos generado correctamente');
+    } catch (error: any) {
+      console.error('💥 Error exporting patient appointments:', error);
+      this.messageService.showError('Error al generar el archivo Excel de turnos');
+    }
+  }
+
+  getStatusName(statusId: number): string {
+    const statuses: { [key: number]: string } = {
+      1: 'Pendiente',
+      2: 'Aceptado',
+      3: 'Rechazado',
+      4: 'Realizado',
+      5: 'Cancelado'
+    };
+    return statuses[statusId] || 'Desconocido';
   }
 
   trackByUserId(index: number, user: User): string {

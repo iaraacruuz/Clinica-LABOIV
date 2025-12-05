@@ -69,11 +69,11 @@ export class TurnosAdminComponent implements OnInit {
   // ==================== VALIDACIONES ====================
   
   /**
-   * Puede cancelar si NO fue Aceptado, Realizado o Rechazado
-   * Status: 1=Pendiente, 2=Aceptado, 3=Rechazado, 4=Realizado, 5=Cancelado
+   * Puede cancelar solo si está en estado Solicitado (1) o Aceptado (2)
+   * Status: 1=Solicitado, 2=Aceptado, 3=Rechazado, 4=Finalizado, 5=Cancelado
    */
   canCancel(appointment: Appointment): boolean {
-    return ![2, 3, 4].includes(appointment.status_id);
+    return appointment.status_id === 1 || appointment.status_id === 2;
   }
 
   // ==================== ACCIONES ====================

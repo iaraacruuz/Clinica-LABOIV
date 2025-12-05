@@ -279,10 +279,28 @@
     font-size: 0.85rem;
     cursor: pointer;
     transition: all 0.3s ease;
+    margin-right: 8px;
 
     &:hover {
       transform: translateY(-2px);
       box-shadow: 0 6px 15px rgba(155, 89, 182, 0.3);
+    }
+  }
+
+  .btn-export-patient {
+    background: linear-gradient(135deg, #27ae60, #229954);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 15px rgba(39, 174, 96, 0.3);
     }
   }
 

@@ -14,15 +14,18 @@
     <div class="form-step">
       <h2>1. Seleccionar Especialidad</h2>
       <div class="specialty-grid">
-        <div 
+        <button 
           *ngFor="let specialty of specialties"
-          class="specialty-card"
+          class="specialty-btn"
           [class.selected]="selectedSpecialtyId === specialty.id"
           (click)="selectedSpecialtyId = specialty.id; onSpecialtyChange()"
         >
-          <span class="specialty-icon">🏥</span>
+          <div class="specialty-icon">
+            <img *ngIf="specialty.image_url" [src]="specialty.image_url" [alt]="specialty.name" />
+            <img *ngIf="!specialty.image_url" src="clinic-icon.svg" [alt]="specialty.name" class="default-icon" />
+          </div>
           <span class="specialty-name">{{ specialty.name }}</span>
-        </div>
+        </button>
       </div>
     </div>
 
@@ -40,18 +43,24 @@
       </div>
       
       <div class="specialist-grid">
-        <div 
+        <button 
           *ngFor="let specialist of specialists"
-          class="specialist-card"
+          class="specialist-btn"
           [class.selected]="selectedSpecialistId === specialist.id"
           (click)="selectedSpecialistId = specialist.id; onSpecialistChange()"
         >
-          <span class="specialist-icon">👨‍⚕️</span>
-          <div class="specialist-info">
-            <h3>{{ specialist.name }} {{ specialist.last_name }}</h3>
-            <p>{{ getSpecialtyName(selectedSpecialtyId) }}</p>
+          <h3 class="specialist-name">{{ specialist.name }} {{ specialist.last_name }}</h3>
+          <div class="specialist-photo">
+            <img *ngIf="specialist.profile_image_url" [src]="specialist.profile_image_url" [alt]="specialist.name" />
+            <div *ngIf="!specialist.profile_image_url" class="specialist-placeholder">
+              <svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+              </svg>
+            </div>
           </div>
-        </div>
+          <p class="specialist-specialty">{{ getSpecialtyName(selectedSpecialtyId) }}</p>
+        </button>
       </div>
     </div>
 
@@ -93,14 +102,24 @@
       
       <div *ngIf="!loadingSlots && availableSlots.length > 0" class="time-slots">
         <div *ngFor="let dateGroup of getGroupedSlots() | keyvalue" class="date-group">
-          <h3 class="date-header">
-            {{ dateGroup.value[0].dayName | titlecase }}, {{ dateGroup.key }}
-          </h3>
+          <button 
+            class="date-btn"
+            [class.has-selected-time]="hasSelectedTimeInDate(dateGroup.key)"
+            (click)="toggleDateExpansion(dateGroup.key)"
+          >
+            <div class="date-content">
+              <span class="day-name">{{ dateGroup.value[0].dayName | titlecase }}</span>
+              <span class="date-number">{{ dateGroup.key }}</span>
+            </div>
+            <svg class="expand-icon" [class.expanded]="isDateExpanded(dateGroup.key)" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+          </button>
           
-          <div class="slots-grid">
+          <div class="slots-grid" *ngIf="isDateExpanded(dateGroup.key)">
             <button 
               *ngFor="let slot of dateGroup.value"
-              class="time-slot"
+              class="time-slot-btn"
               [class.selected]="selectedTimeSlot === slot"
               [disabled]="!slot.available"
               (click)="selectTimeSlot(slot)"

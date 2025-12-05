@@ -1,0 +1,146 @@
+<div class="estadisticas-container">
+  <div class="header">
+    <h1>📊 Estadísticas e Informes</h1>
+    <p class="subtitle">Panel completo de estadísticas del sistema</p>
+  </div>
+
+  <!-- Tabs para diferentes secciones -->
+  <div class="tabs">
+    <button 
+      class="tab-button" 
+      [class.active]="activeTab === 'turnos-especialidad'"
+      (click)="switchTab('turnos-especialidad')">
+      📈 Turnos por Especialidad
+    </button>
+    <button 
+      class="tab-button" 
+      [class.active]="activeTab === 'turnos-dia'"
+      (click)="switchTab('turnos-dia')">
+      📅 Turnos por Día
+    </button>
+    <button 
+      class="tab-button" 
+      [class.active]="activeTab === 'turnos-medico'"
+      (click)="switchTab('turnos-medico')">
+      👨‍⚕️ Turnos por Médico
+    </button>
+    <button 
+      class="tab-button" 
+      [class.active]="activeTab === 'log-ingresos'"
+      (click)="switchTab('log-ingresos')">
+      🔐 Log de Ingresos
+    </button>
+  </div>
+
+  <div class="content">
+    @if (loading) {
+      <div class="loading">
+        <div class="spinner"></div>
+        <p>Cargando estadísticas...</p>
+      </div>
+    } @else if (error) {
+      <div class="error-message">
+        <p>{{ error }}</p>
+      </div>
+    } @else {
+      <!-- TURNOS POR ESPECIALIDAD -->
+      @if (activeTab === 'turnos-especialidad') {
+        <div class="chart-section">
+          <div class="section-header">
+            <h2>Cantidad de Turnos por Especialidad</h2>
+            <div class="export-buttons">
+              <button class="btn btn-excel" (click)="exportSpecialtyToExcel()">📊 Exportar Excel</button>
+              <button class="btn btn-pdf" (click)="exportSpecialtyToPDF()">📄 Exportar PDF</button>
+            </div>
+          </div>
+          <div class="chart-container">
+            <div class="ct-chart" id="chart-specialty"></div>
+          </div>
+        </div>
+      }
+
+      <!-- TURNOS POR DÍA -->
+      @if (activeTab === 'turnos-dia') {
+        <div class="chart-section">
+          <div class="section-header">
+            <h2>Cantidad de Turnos por Día</h2>
+            <div class="export-buttons">
+              <button class="btn btn-excel" (click)="exportDayToExcel()">📊 Exportar Excel</button>
+              <button class="btn btn-pdf" (click)="exportDayToPDF()">📄 Exportar PDF</button>
+            </div>
+          </div>
+          <div class="chart-container">
+            <div class="ct-chart" id="chart-day"></div>
+          </div>
+        </div>
+      }
+
+      <!-- TURNOS POR MÉDICO -->
+      @if (activeTab === 'turnos-medico') {
+        <div class="chart-section">
+          <div class="section-header">
+            <h2>Turnos por Médico</h2>
+            <div class="date-filters">
+              <label>Desde: <input type="date" [(ngModel)]="startDate" (change)="loadAppointmentsByDoctor()"></label>
+              <label>Hasta: <input type="date" [(ngModel)]="endDate" (change)="loadAppointmentsByDoctor()"></label>
+            </div>
+            <div class="export-buttons">
+              <button class="btn btn-excel" (click)="exportDoctorToExcel()">📊 Exportar Excel</button>
+              <button class="btn btn-pdf" (click)="exportDoctorToPDF()">📄 Exportar PDF</button>
+            </div>
+          </div>
+          <div class="charts-grid">
+            <div class="chart-container">
+              <h3>Turnos Solicitados</h3>
+              <div class="ct-chart" id="chart-doctor-requested"></div>
+            </div>
+            <div class="chart-container">
+              <h3>Turnos Finalizados</h3>
+              <div class="ct-chart" id="chart-doctor-finished"></div>
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- LOG DE INGRESOS -->
+      @if (activeTab === 'log-ingresos') {
+        <div class="log-section">
+          <div class="section-header">
+            <h2>Log de Ingresos al Sistema</h2>
+            <div class="export-buttons">
+              <button class="btn btn-excel" (click)="exportLogsToExcel()">📊 Exportar Excel</button>
+              <button class="btn btn-pdf" (click)="exportLogsToPDF()">📄 Exportar PDF</button>
+            </div>
+          </div>
+          <div class="table-container">
+            <table class="logs-table">
+              <thead>
+                <tr>
+                  <th>Usuario</th>
+                  <th>Email</th>
+                  <th>Rol</th>
+                  <th>Fecha y Hora de Ingreso</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (log of loginLogs; track log.id) {
+                  <tr>
+                    <td>{{ log.user_name }}</td>
+                    <td>{{ log.user_email }}</td>
+                    <td><span class="role-badge" [class]="'role-' + log.user_role">{{ log.user_role }}</span></td>
+                    <td>{{ log.login_timestamp | date:'dd/MM/yyyy HH:mm:ss' }}</td>
+                  </tr>
+                }
+                @empty {
+                  <tr>
+                    <td colspan="4" class="no-data">No hay registros de ingresos</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      }
+    }
+  </div>
+</div>

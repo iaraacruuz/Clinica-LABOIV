@@ -19,19 +19,13 @@ export class SupabaseService {
     return this.supabase;
   }
 
-  // ================= AUTH =================
-
+  /** Registra un nuevo usuario en el sistema */
   async register(email: string, password: string, metadata?: any) {
     this.loader.show();
     try {
-      // Accept optional metadata as extra args via an options object
-      // Callers can pass an object like: register(email, password, { role: 'specialist' })
-      // which will be forwarded to Supabase as user metadata.
       const args: any = { email, password };
-      // If caller provided `metadata`, forward it as user metadata
       const meta = metadata ?? (arguments as any)[2];
       if (meta && typeof meta === 'object') {
-        // supabase-js signUp accepts metadata via the `options.data` field
         const response = await this.supabase.auth.signUp({ email, password, options: { data: meta } } as any);
         return response;
       }
@@ -42,6 +36,7 @@ export class SupabaseService {
     }
   }
 
+  /** Inicia sesión con email y contraseña, reintentando automáticamente en caso de error temporal */
   async login(email: string, password: string) {
     this.loader.show();
     try {
@@ -53,10 +48,8 @@ export class SupabaseService {
           return response;
         } catch (err: any) {
           const msg = (err && err.message) ? err.message : String(err);
-          // Retry on NavigatorLockAcquireTimeoutError which can happen in browsers
           if (msg.includes('NavigatorLockAcquireTimeoutError') && attempt < maxRetries) {
             attempt++;
-            // small backoff
             await new Promise(r => setTimeout(r, 200 * attempt));
             continue;
           }
@@ -85,8 +78,7 @@ export class SupabaseService {
     return data.user;
   }
 
-  // ================= PROFILES =================
-
+  /** Crea un nuevo perfil de usuario en la base de datos */
   async createProfile(data: any) {
     this.loader.show();
     const response = await this.supabase.from('profiles').insert(data);
@@ -107,7 +99,6 @@ export class SupabaseService {
     return data || null;
   }
 
-  // New method: get profile without async role-specific data (faster, less concurrent)
   async getProfileBasic(id: string) {
     return this.getProfile(id);
   }
@@ -132,8 +123,7 @@ export class SupabaseService {
     return data;
   }
 
-  // ================= PATIENTS DATA =================
-
+  /** Crea registro de datos específicos del paciente */
   async createPatientData(data: any) {
     this.loader.show();
     const response = await this.supabase.from('patients_data').insert(data);
@@ -161,8 +151,7 @@ export class SupabaseService {
     return response;
   }
 
-  // ================= SPECIALISTS DATA =================
-
+  /** Crea registro de datos específicos del especialista */
   async createSpecialistData(data: any) {
     this.loader.show();
     const response = await this.supabase.from('specialists_data').insert(data);
@@ -200,8 +189,7 @@ export class SupabaseService {
     return data;
   }
 
-  // ================= SPECIALTIES =================
-
+  /** Obtiene todas las especialidades disponibles ordenadas alfabéticamente */
   async getSpecialties() {
     const { data, error } = await this.supabase
       .from('specialties')
@@ -222,8 +210,7 @@ export class SupabaseService {
     return data;
   }
 
-  // ================= APPOINTMENTS =================
-
+  /** Crea un nuevo turno en el sistema */
   async createAppointment(data: any) {
     this.loader.show();
     const response = await this.supabase
@@ -293,8 +280,7 @@ export class SupabaseService {
     return response;
   }
 
-  // ================= APPOINTMENT COMMENTS =================
-
+  /** Crea un comentario asociado a un turno */
   async createAppointmentComment(data: any) {
     this.loader.show();
     const response = await this.supabase
@@ -314,8 +300,7 @@ export class SupabaseService {
     return data;
   }
 
-  // ================= APPOINTMENT STATUSES =================
-
+  /** Obtiene los estados de turno disponibles */
   async getAppointmentStatuses() {
     const { data, error } = await this.supabase
       .from('appointment_statuses')

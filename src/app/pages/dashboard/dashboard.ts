@@ -11,13 +11,14 @@ import { TurnosAdminComponent } from '../turnos-admin/turnos-admin';
 import { SolicitarTurnoComponent } from '../solicitar-turno/solicitar-turno';
 import { MiPerfilComponent } from '../mi-perfil/mi-perfil';
 import { PacientesEspecialistaComponent } from '../pacientes-especialista/pacientes-especialista';
+import { EstadisticasComponent } from '../../admin/estadisticas/estadisticas';
 import { ConfirmationModalComponent } from '../../shared/confirmation-modal/confirmation-modal';
 import { fadeIn, slideInUp } from '../../animations';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, AprobarEspecialistasComponent, UsuariosAdminComponent, MisTurnosComponent, MisTurnosEspecialistaComponent, TurnosAdminComponent, SolicitarTurnoComponent, MiPerfilComponent, PacientesEspecialistaComponent, ConfirmationModalComponent],
+  imports: [CommonModule, AprobarEspecialistasComponent, UsuariosAdminComponent, MisTurnosComponent, MisTurnosEspecialistaComponent, TurnosAdminComponent, SolicitarTurnoComponent, MiPerfilComponent, PacientesEspecialistaComponent, EstadisticasComponent, ConfirmationModalComponent],
   templateUrl: './dashboard.html',
   styleUrls: ['./dashboard.scss'],
   animations: [fadeIn, slideInUp]
@@ -36,8 +37,6 @@ export class DashboardComponent implements OnInit {
   activeSection: 'home' | 'especialistas' | 'usuarios' | 'estadisticas' | 'turnos' | 'turnos-admin' | 'solicitar-turno' | 'perfil' | 'pacientes' = 'home';
   showLogoutConfirmation = false;
   
-  // Método para cambiar de sección
-
   constructor(
     private auth: AuthService,
     private supabase: SupabaseService,
@@ -45,14 +44,12 @@ export class DashboardComponent implements OnInit {
   ) {}
 
   async ngOnInit() {
-    // Verify user is authenticated
     const sessionUser = this.auth.currentUser();
     if (!sessionUser) {
       this.router.navigate(['/login']);
       return;
     }
 
-    // Get full user profile
     this.currentUser = await this.supabase.getUserData(sessionUser.uid);
     
     if (!this.currentUser) {
@@ -60,7 +57,6 @@ export class DashboardComponent implements OnInit {
       return;
     }
 
-    // Load stats only for admin
     if (this.currentUser.role === 'admin') {
       await this.loadStats();
     }

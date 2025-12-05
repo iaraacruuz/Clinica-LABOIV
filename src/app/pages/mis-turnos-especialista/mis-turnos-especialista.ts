@@ -39,12 +39,12 @@ export class MisTurnosEspecialistaComponent implements OnInit {
     pressure: string;
     diagnosis: string;
     observations: string;
-    additionalField1Key: string;
-    additionalField1Value: string;
-    additionalField2Key: string;
-    additionalField2Value: string;
-    additionalField3Key: string;
-    additionalField3Value: string;
+    fixedField1Value: string; // Síntoma Principal
+    fixedField2Value: string; // Área Afectada
+    // Sprint 5: Nuevos campos dinámicos obligatorios
+    rangeField: number; // Control de rango 0-100
+    numericField: number | null; // Campo numérico
+    switchField: boolean; // Switch Si/No
   } = {
     height: null,
     weight: null,
@@ -52,13 +52,15 @@ export class MisTurnosEspecialistaComponent implements OnInit {
     pressure: '',
     diagnosis: '',
     observations: '',
-    additionalField1Key: '',
-    additionalField1Value: '',
-    additionalField2Key: '',
-    additionalField2Value: '',
-    additionalField3Key: '',
-    additionalField3Value: ''
+    fixedField1Value: '',
+    fixedField2Value: '',
+    rangeField: 50, // Valor inicial en el medio
+    numericField: null,
+    switchField: false
   };
+  
+  // Campos dinámicos adicionales (máximo 3)
+  dynamicFields: { key: string; value: string }[] = [];
   
   loading: boolean = false;
 
@@ -78,7 +80,7 @@ export class MisTurnosEspecialistaComponent implements OnInit {
       this.loading = true;
       const user = this.authService.currentUser();
       if (user) {
-        this.appointments = await this.appointmentsService.getSpecialistAppointments(user.uid);
+        this.appointments = await this.appointmentsService.getSpecialistAppointmentsFull(user.uid);
         this.applyFilters();
       }
     } catch (error) {
@@ -142,25 +144,25 @@ export class MisTurnosEspecialistaComponent implements OnInit {
   // ==================== VALIDACIONES ====================
   
   /**
-   * Puede cancelar si NO fue Aceptado, Realizado o Rechazado
-   * Status: 1=Pendiente, 2=Aceptado, 3=Rechazado, 4=Realizado, 5=Cancelado
+   * Puede cancelar solo si está en estado Aceptado (2)
+   * Status: 1=Solicitado, 2=Aceptado, 3=Rechazado, 4=Finalizado, 5=Cancelado
    */
   canCancel(appointment: Appointment): boolean {
-    return ![2, 3, 4].includes(appointment.status_id);
+    return appointment.status_id === 2;
   }
 
   /**
-   * Puede rechazar si NO fue Aceptado, Realizado o Cancelado
+   * Puede rechazar solo si está en estado Solicitado (1)
    */
   canReject(appointment: Appointment): boolean {
-    return ![2, 4, 5].includes(appointment.status_id);
+    return appointment.status_id === 1;
   }
 
   /**
-   * Puede aceptar si NO fue Realizado, Cancelado o Rechazado
+   * Puede aceptar solo si está en estado Solicitado (1)
    */
   canAccept(appointment: Appointment): boolean {
-    return ![3, 4, 5].includes(appointment.status_id);
+    return appointment.status_id === 1;
   }
 
   /**
@@ -303,13 +305,23 @@ export class MisTurnosEspecialistaComponent implements OnInit {
       pressure: '',
       diagnosis: '',
       observations: '',
-      additionalField1Key: '',
-      additionalField1Value: '',
-      additionalField2Key: '',
-      additionalField2Value: '',
-      additionalField3Key: '',
-      additionalField3Value: ''
+      fixedField1Value: '',
+      fixedField2Value: '',
+      rangeField: 50,
+      numericField: null,
+      switchField: false
     };
+    this.dynamicFields = [];
+  }
+
+  addDynamicField() {
+    if (this.dynamicFields.length < 3) {
+      this.dynamicFields.push({ key: '', value: '' });
+    }
+  }
+
+  removeDynamicField(index: number) {
+    this.dynamicFields.splice(index, 1);
   }
 
   async confirmComplete() {
@@ -327,24 +339,48 @@ export class MisTurnosEspecialistaComponent implements OnInit {
       this.loading = true;
 
       const additionalFields: AdditionalField[] = [];
-      if (this.medicalHistory.additionalField1Key && this.medicalHistory.additionalField1Value) {
+      
+      // Sprint 5: Agregar campos dinámicos obligatorios
+      additionalFields.push({
+        key: 'Nivel de Dolor (0-100)',
+        value: this.medicalHistory.rangeField.toString()
+      });
+      
+      if (this.medicalHistory.numericField !== null) {
         additionalFields.push({
-          key: this.medicalHistory.additionalField1Key,
-          value: this.medicalHistory.additionalField1Value
+          key: 'Días con Síntomas',
+          value: this.medicalHistory.numericField.toString()
         });
       }
-      if (this.medicalHistory.additionalField2Key && this.medicalHistory.additionalField2Value) {
+      
+      additionalFields.push({
+        key: 'Requiere Seguimiento',
+        value: this.medicalHistory.switchField ? 'Sí' : 'No'
+      });
+      
+      // Agregar campos fijos si tienen valor
+      if (this.medicalHistory.fixedField1Value.trim()) {
         additionalFields.push({
-          key: this.medicalHistory.additionalField2Key,
-          value: this.medicalHistory.additionalField2Value
+          key: 'Síntoma Principal',
+          value: this.medicalHistory.fixedField1Value
         });
       }
-      if (this.medicalHistory.additionalField3Key && this.medicalHistory.additionalField3Value) {
+      if (this.medicalHistory.fixedField2Value.trim()) {
         additionalFields.push({
-          key: this.medicalHistory.additionalField3Key,
-          value: this.medicalHistory.additionalField3Value
+          key: 'Área Afectada',
+          value: this.medicalHistory.fixedField2Value
         });
       }
+      
+      // Agregar campos dinámicos si tienen clave y valor
+      this.dynamicFields.forEach(field => {
+        if (field.key.trim() && field.value.trim()) {
+          additionalFields.push({
+            key: field.key,
+            value: field.value
+          });
+        }
+      });
 
       const medicalRecord: MedicalHistoryRecord = {
         patient_id: this.selectedAppointment.patient_id!,
@@ -414,30 +450,48 @@ export class MisTurnosEspecialistaComponent implements OnInit {
   }
 
   formatDate(dateString: string, timeString?: string): string {
+    if (!dateString) return 'Fecha no disponible';
+    
     // Si solo hay fecha (DATE), usar esa fecha directamente
     // Si hay hora también (TIME), combinarlas
     let dateToFormat: Date;
     
-    if (timeString) {
-      // Combinar fecha y hora
-      dateToFormat = new Date(`${dateString}T${timeString}`);
-    } else {
-      // Solo fecha
-      dateToFormat = new Date(dateString + 'T00:00:00');
+    try {
+      if (timeString) {
+        // Combinar fecha y hora
+        // Limpiar dateString en caso de que ya tenga hora
+        const dateOnly = dateString.includes('T') ? dateString.split('T')[0] : dateString;
+        dateToFormat = new Date(`${dateOnly}T${timeString}`);
+      } else if (dateString.includes('T')) {
+        // Ya tiene fecha y hora combinadas
+        dateToFormat = new Date(dateString);
+      } else {
+        // Solo fecha
+        dateToFormat = new Date(dateString + 'T00:00:00');
+      }
+      
+      // Validar que la fecha sea válida
+      if (isNaN(dateToFormat.getTime())) {
+        console.error('Invalid date:', dateString, timeString);
+        return 'Fecha inválida';
+      }
+      
+      const options: Intl.DateTimeFormatOptions = {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      };
+      
+      if (timeString || dateString.includes('T')) {
+        options.hour = '2-digit';
+        options.minute = '2-digit';
+      }
+      
+      return dateToFormat.toLocaleDateString('es-AR', options);
+    } catch (error) {
+      console.error('Error formatting date:', error, dateString, timeString);
+      return 'Error en fecha';
     }
-    
-    const options: Intl.DateTimeFormatOptions = {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    };
-    
-    if (timeString) {
-      options.hour = '2-digit';
-      options.minute = '2-digit';
-    }
-    
-    return dateToFormat.toLocaleDateString('es-AR', options);
   }
 }

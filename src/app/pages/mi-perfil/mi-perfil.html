@@ -48,7 +48,84 @@
 
     <!-- SECCIÓN DE HORARIOS (SOLO ESPECIALISTAS) -->
     <div *ngIf="currentUser.role === 'specialist'" class="schedules-section">
-      <div class="section-header">
+      
+      <!-- SECCIÓN DE ESPECIALIDADES -->
+      <div class="specialties-management">
+        <div class="section-header">
+          <h2>Mis Especialidades</h2>
+          <button 
+            *ngIf="!isEditingSpecialties"
+            class="btn btn-primary"
+            (click)="toggleEditSpecialties()"
+          >
+            ➕ Agregar Especialidad
+          </button>
+        </div>
+
+        <div *ngIf="userSpecialties.length === 0" class="no-specialties">
+          <p>📋 No tienes especialidades asociadas.</p>
+        </div>
+
+        <div *ngIf="userSpecialties.length > 0" class="specialties-list">
+          <div *ngFor="let userSpec of userSpecialties" class="specialty-item">
+            <div class="specialty-info">
+              <span class="specialty-name">{{ userSpec.specialties?.name || 'Sin nombre' }}</span>
+              <span class="specialty-status" [class.approved]="userSpec.is_approved" [class.pending]="!userSpec.is_approved">
+                {{ userSpec.is_approved ? '✅ Aprobada' : '⏳ Pendiente' }}
+              </span>
+            </div>
+            <button 
+              class="btn-delete-specialty"
+              (click)="removeSpecialty(userSpec.id)"
+              title="Eliminar especialidad"
+            >
+              🗑️
+            </button>
+          </div>
+        </div>
+
+        <!-- FORMULARIO AGREGAR ESPECIALIDAD -->
+        <div *ngIf="isEditingSpecialties" class="add-specialty-form">
+          <h3>Agregar Nueva Especialidad</h3>
+          
+          <div class="form-group">
+            <label>Seleccionar de la lista:</label>
+            <select [(ngModel)]="selectedNewSpecialty" class="select-field">
+              <option [ngValue]="null">-- Selecciona una especialidad --</option>
+              <option *ngFor="let spec of getAvailableSpecialties()" [ngValue]="spec.id">
+                {{ spec.name }}
+              </option>
+            </select>
+          </div>
+
+          <div class="divider-or">
+            <span>O</span>
+          </div>
+
+          <div class="form-group">
+            <label>Crear nueva especialidad:</label>
+            <input 
+              type="text" 
+              [(ngModel)]="customSpecialtyName" 
+              placeholder="Ej: Cardiología"
+              class="input-field"
+              [disabled]="selectedNewSpecialty !== null"
+            />
+          </div>
+
+          <div class="form-actions">
+            <button class="btn btn-secondary" (click)="toggleEditSpecialties()">
+              Cancelar
+            </button>
+            <button class="btn btn-success" (click)="addSpecialty()">
+              Agregar
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- HORARIOS DE ATENCIÓN -->
+      <div class="section-header" style="margin-top: 30px;">
         <h2>Mis Horarios de Atención</h2>
         <div class="header-actions">
           <button 
@@ -252,20 +329,37 @@
         </button>
       </div>
 
+      <!-- FILTRO POR PROFESIONAL -->
+      <div *ngIf="availableSpecialists.length > 0" class="filter-section">
+        <label for="specialist-filter">Filtrar por profesional:</label>
+        <select 
+          id="specialist-filter"
+          [(ngModel)]="selectedSpecialistFilter" 
+          (change)="filterMedicalHistoryBySpecialist()"
+          class="form-control"
+        >
+          <option value="all">Todos los profesionales</option>
+          <option *ngFor="let specialist of availableSpecialists" [value]="specialist.id">
+            {{ specialist.name }}
+          </option>
+        </select>
+      </div>
+
       <div *ngIf="loadingMedicalHistory" class="loading-container">
         <div class="spinner"></div>
         <p>Cargando historia clínica...</p>
       </div>
 
-      <div *ngIf="!loadingMedicalHistory && medicalHistory.length === 0" class="empty-state">
+      <div *ngIf="!loadingMedicalHistory && filteredMedicalHistory.length === 0" class="empty-state">
         <div class="empty-icon">📋</div>
         <h3>Sin registros médicos</h3>
-        <p>Aún no tenés consultas registradas en tu historia clínica</p>
+        <p *ngIf="selectedSpecialistFilter === 'all'">Aún no tenés consultas registradas en tu historia clínica</p>
+        <p *ngIf="selectedSpecialistFilter !== 'all'">No hay consultas con el profesional seleccionado</p>
       </div>
 
-      <div *ngIf="!loadingMedicalHistory && medicalHistory.length > 0" class="medical-records-grid">
+      <div *ngIf="!loadingMedicalHistory && filteredMedicalHistory.length > 0" class="medical-records-grid">
         <div 
-          *ngFor="let record of medicalHistory; trackBy: trackByIndex"
+          *ngFor="let record of filteredMedicalHistory; trackBy: trackByIndex"
           class="medical-record-card"
           (click)="openMedicalHistoryDetail(record)"
         >
@@ -316,17 +410,17 @@
     </button>
   </div>
 </div>
-<!-- MODAL: Detalle Historia Cl�nica -->
+<!-- MODAL: Detalle Historia Cl�nica -->
 <div *ngIf="showMedicalHistoryModal && selectedRecord" class="modal-overlay" (click)="closeMedicalHistoryModal()">
   <div class="modal-content medical-detail-modal" (click)="$event.stopPropagation()">
     <div class="modal-header">
-      <h2>?? Detalle de Consulta M�dica</h2>
+      <h2>?? Detalle de Consulta M�dica</h2>
       <button class="btn-close" (click)="closeMedicalHistoryModal()">?</button>
     </div>
 
     <div class="modal-body">
       <div class="detail-section">
-        <h3>Informaci�n General</h3>
+        <h3>Informaci�n General</h3>
         <div class="detail-grid">
           <div class="detail-item">
             <span class="label">Fecha:</span>
@@ -340,7 +434,7 @@
       </div>
 
       <div class="detail-section" *ngIf="selectedRecord.height || selectedRecord.weight || selectedRecord.temperature || selectedRecord.pressure">
-        <h3>Datos F�sicos</h3>
+        <h3>Datos F�sicos</h3>
         <div class="detail-grid">
           <div class="detail-item" *ngIf="selectedRecord.height">
             <span class="label">Altura:</span>
@@ -352,17 +446,17 @@
           </div>
           <div class="detail-item" *ngIf="selectedRecord.temperature">
             <span class="label">Temperatura:</span>
-            <span class="value">{{ selectedRecord.temperature }} �C</span>
+            <span class="value">{{ selectedRecord.temperature }} �C</span>
           </div>
           <div class="detail-item" *ngIf="selectedRecord.pressure">
-            <span class="label">Presi�n Arterial:</span>
+            <span class="label">Presi�n Arterial:</span>
             <span class="value">{{ selectedRecord.pressure }}</span>
           </div>
         </div>
       </div>
 
       <div class="detail-section">
-        <h3>Diagn�stico</h3>
+        <h3>Diagn�stico</h3>
         <div class="diagnosis-box">
           {{ selectedRecord.diagnosis }}
         </div>
@@ -376,7 +470,7 @@
       </div>
 
       <div class="detail-section" *ngIf="selectedRecord.additional_fields && selectedRecord.additional_fields.length > 0">
-        <h3>Informaci�n Adicional</h3>
+        <h3>Informaci�n Adicional</h3>
         <div class="detail-grid">
           <div class="detail-item" *ngFor="let field of selectedRecord.additional_fields">
             <span class="label">{{ field.key }}:</span>

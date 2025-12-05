@@ -1,1 +1,92 @@
 /* You can add global styles to this file, and also import other style files */
+
+/* Global Chartist Styles Override */
+.ct-chart {
+  .ct-label {
+    font-size: 0.75rem;
+    color: #5f6368 !important;
+    fill: #5f6368 !important;
+    font-weight: 500;
+  }
+
+  .ct-label.ct-horizontal.ct-end {
+    display: block;
+    transform: rotate(-45deg);
+    transform-origin: left top;
+    text-align: left;
+    justify-content: flex-start;
+    margin-top: 8px;
+    white-space: nowrap;
+  }
+
+  .ct-grid {
+    stroke: #e0e0e0 !important;
+    stroke-width: 1px;
+    stroke-dasharray: 2px;
+  }
+
+  .ct-series-a .ct-bar,
+  .ct-series-a .ct-line,
+  .ct-series-a .ct-point,
+  .ct-series-a .ct-slice-donut {
+    stroke: #3498db !important;
+  }
+
+  .ct-series-a .ct-bar {
+    stroke-width: 40px;
+    stroke-linecap: round;
+  }
+
+  .ct-series-a .ct-slice-pie,
+  .ct-series-a .ct-slice-donut-solid,
+  .ct-series-a .ct-area {
+    fill: #3498db !important;
+  }
+
+  .ct-series-b .ct-bar,
+  .ct-series-b .ct-line,
+  .ct-series-b .ct-point,
+  .ct-series-b .ct-slice-donut {
+    stroke: #2ecc71 !important;
+  }
+
+  .ct-series-b .ct-bar {
+    stroke-width: 40px;
+    stroke-linecap: round;
+  }
+
+  .ct-series-b .ct-slice-pie,
+  .ct-series-b .ct-slice-donut-solid,
+  .ct-series-b .ct-area {
+    fill: #2ecc71 !important;
+  }
+
+  .ct-series-c .ct-bar,
+  .ct-series-c .ct-line,
+  .ct-series-c .ct-point,
+  .ct-series-c .ct-slice-donut {
+    stroke: #e74c3c !important;
+  }
+
+  .ct-series-c .ct-bar {
+    stroke-width: 40px;
+    stroke-linecap: round;
+  }
+
+  .ct-series-c .ct-slice-pie,
+  .ct-series-c .ct-slice-donut-solid,
+  .ct-series-c .ct-area {
+    fill: #e74c3c !important;
+  }
+}
+
+/* Reset some default styles */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+}

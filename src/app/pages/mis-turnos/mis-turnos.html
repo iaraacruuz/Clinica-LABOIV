@@ -205,9 +205,11 @@
         <textarea 
           [(ngModel)]="surveyAnswers.question6"
           name="q6"
-          rows="3"
+          rows="5"
+          maxlength="300"
           class="form-control"
-          placeholder="Ingrese cualquier comentario o sugerencia adicional"></textarea>
+          placeholder="Ingrese cualquier comentario o sugerencia adicional (máximo 5 líneas)"></textarea>
+        <small class="char-counter">{{ surveyAnswers.question6.length }}/300 caracteres</small>
       </div>
     </form>
 
@@ -242,9 +244,12 @@
       <textarea 
         id="patientComment"
         [(ngModel)]="patientComment"
-        rows="4"
-        placeholder="Describa cómo fue la atención del especialista"
+        (input)="onCommentInput($event)"
+        rows="5"
+        maxlength="300"
+        placeholder="Describa cómo fue la atención del especialista (máximo 5 líneas)"
         class="form-control"></textarea>
+      <small class="char-counter">{{ patientComment.length }}/300 caracteres</small>
     </div>
 
     <div class="modal-actions">

@@ -30,9 +30,7 @@ export interface MedicalHistoryRecord {
 export class MedicalHistoryService {
   constructor(private supabaseService: SupabaseService) {}
 
-  /**
-   * Crea un nuevo registro de historia clínica
-   */
+  /** Crea un nuevo registro en la historia clínica del paciente */
   async createRecord(record: MedicalHistoryRecord): Promise<any> {
     const { data, error } = await this.supabaseService.client
       .from('medical_history')
@@ -55,9 +53,7 @@ export class MedicalHistoryService {
     return data;
   }
 
-  /**
-   * Obtiene la historia clínica completa de un paciente
-   */
+  /** Obtiene todos los registros médicos de un paciente ordenados por fecha */
   async getPatientHistory(patientId: string): Promise<MedicalHistoryRecord[]> {
     const { data, error } = await this.supabaseService.client
       .from('medical_history')
@@ -73,15 +69,13 @@ export class MedicalHistoryService {
     return data || [];
   }
 
-  /**
-   * Obtiene todos los pacientes atendidos por un especialista
-   */
+  /** Obtiene la lista de pacientes únicos atendidos por un especialista */
   async getSpecialistPatients(specialistId: string): Promise<any[]> {
     const { data, error } = await this.supabaseService.client
       .from('medical_history')
       .select(`
         patient_id,
-        patient:profiles!medical_history_patient_id_fkey(id, name, last_name, dni, age, profile_image_url)
+        patient:profiles!medical_history_patient_id_fkey(id, name, last_name, dni, age, email, profile_image_url)
       `)
       .eq('specialist_id', specialistId);
 
@@ -97,9 +91,7 @@ export class MedicalHistoryService {
     return Array.from(uniquePatients.values());
   }
 
-  /**
-   * Obtiene el historial de un paciente visto por un especialista específico
-   */
+  /** Obtiene el historial de atenciones de un paciente específico con un especialista */
   async getPatientHistoryBySpecialist(patientId: string, specialistId: string): Promise<MedicalHistoryRecord[]> {
     const { data, error } = await this.supabaseService.client
       .from('medical_history')
@@ -116,9 +108,7 @@ export class MedicalHistoryService {
     return data || [];
   }
 
-  /**
-   * Actualiza un registro existente
-   */
+  /** Actualiza la información de un registro médico existente */
   async updateRecord(id: number, updates: Partial<MedicalHistoryRecord>): Promise<any> {
     const { data, error } = await this.supabaseService.client
       .from('medical_history')
@@ -139,9 +129,7 @@ export class MedicalHistoryService {
     return data;
   }
 
-  /**
-   * Obtiene un registro específico por ID
-   */
+  /** Obtiene un registro médico específico por su ID */
   async getRecordById(id: number): Promise<MedicalHistoryRecord | null> {
     const { data, error } = await this.supabaseService.client
       .from('medical_history')
@@ -157,9 +145,7 @@ export class MedicalHistoryService {
     return data;
   }
 
-  /**
-   * Obtiene todos los registros (solo para admin)
-   */
+  /** Obtiene todos los registros médicos del sistema (solo para administradores) */
   async getAllRecords(): Promise<MedicalHistoryRecord[]> {
     const { data, error } = await this.supabaseService.client
       .from('medical_history')

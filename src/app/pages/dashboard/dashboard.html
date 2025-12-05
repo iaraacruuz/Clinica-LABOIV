@@ -221,12 +221,7 @@
 
       <!-- ESTADISTICAS SECTION (Admin only) -->
       <div *ngIf="activeSection === 'estadisticas' && currentUser?.role === 'admin'" class="section">
-        <div class="content-card">
-          <h2>📊 Estadísticas del Sistema</h2>
-          <div class="placeholder">
-            <p>Sección en desarrollo. Aquí se mostrarán gráficos y reportes detallados.</p>
-          </div>
-        </div>
+        <app-estadisticas></app-estadisticas>
       </div>
 
       <!-- USUARIOS SECTION (Admin only) -->

@@ -5,17 +5,19 @@ import { Router } from '@angular/router';
 import { SupabaseService } from '../../services/supabase.service';
 import { MessageService } from '../../services/message.service';
 import { ConfirmationModalComponent } from '../../shared/confirmation-modal/confirmation-modal';
-import { CaptchaComponent } from '../../shared/captcha/captcha';
+import { CaptchaDirective } from '../../directives/captcha.directive';
+import { slideInFromRight, fadeIn } from '../../animations';
 
 @Component({
   selector: 'app-register',
   standalone: true,
-  imports: [CommonModule, FormsModule, ConfirmationModalComponent, CaptchaComponent],
+  imports: [CommonModule, FormsModule, ConfirmationModalComponent, CaptchaDirective],
   templateUrl: './registro.html',
-  styleUrls: ['./registro.scss']
+  styleUrls: ['./registro.scss'],
+  animations: [slideInFromRight, fadeIn]
 })
 export class RegistroComponent {
-  @ViewChild(CaptchaComponent) captchaComponent!: CaptchaComponent;
+  @ViewChild(CaptchaDirective) captchaDirective!: CaptchaDirective;
   
   email = '';
   password = '';
@@ -23,8 +25,8 @@ export class RegistroComponent {
   last_name = '';
   age: number | null = null;
   dni = '';
-  role: 'patient' | 'specialist' = 'patient';
-  specialty = '';
+  role: 'patient' | 'specialist' | '' = '';
+  selectedSpecialties: number[] = []; // IDs de especialidades seleccionadas
   customSpecialty = '';
   showCustomSpecialty = false;
   health_insurance = '';
@@ -52,7 +54,6 @@ export class RegistroComponent {
   healthInsuranceTouched = false;
   specialtyTouched = false;
   
-  // Imágenes de perfil
   profileImage1: File | null = null;
   profileImage2: File | null = null;
   profileImage1Preview: string | null = null;
@@ -81,16 +82,15 @@ export class RegistroComponent {
     }
   }
 
+  /** Maneja la selección de archivos de imagen de perfil y crea una previsualización */
   onFileSelected(event: any, imageNumber: 1 | 2) {
     const file = event.target.files[0];
     if (file) {
-      // Validar que sea una imagen
       if (!file.type.startsWith('image/')) {
         this.messageService.showWarning('Por favor selecciona un archivo de imagen válido');
         return;
       }
 
-      // Validar tamaño (máximo 5MB)
       if (file.size > 5 * 1024 * 1024) {
         this.messageService.showWarning('La imagen no debe superar los 5MB');
         return;
@@ -98,7 +98,6 @@ export class RegistroComponent {
 
       if (imageNumber === 1) {
         this.profileImage1 = file;
-        // Crear preview
         const reader = new FileReader();
         reader.onload = (e: any) => {
           this.profileImage1Preview = e.target.result;
@@ -126,15 +125,100 @@ export class RegistroComponent {
     }
   }
 
-  onSpecialtyChange() {
-    if (this.specialty === 'otra') {
+  onSpecialtyChange(event: any) {
+    const value = event.target.value;
+    const specialtyId = parseInt(value);
+    
+    if (value === 'otra') {
       this.showCustomSpecialty = true;
-    } else {
-      this.showCustomSpecialty = false;
-      this.customSpecialty = '';
+      this.customSpecialty = ''; // Limpiar el campo
+    } else if (!isNaN(specialtyId)) {
+      // Verificar si ya está seleccionada
+      if (!this.selectedSpecialties.includes(specialtyId)) {
+        this.selectedSpecialties.push(specialtyId);
+        this.validateSpecialty(); // Revalidar
+      }
+      // Resetear el select
+      event.target.value = '';
     }
   }
 
+  removeSpecialty(specialtyId: number) {
+    this.selectedSpecialties = this.selectedSpecialties.filter(id => id !== specialtyId);
+    this.validateSpecialty(); // Revalidar
+  }
+
+  cancelCustomSpecialty() {
+    this.showCustomSpecialty = false;
+    this.customSpecialty = '';
+  }
+
+  getSpecialtyName(id: number): string {
+    return this.specialities.find(s => s.id === id)?.name || '';
+  }
+
+  async addCustomSpecialty() {
+    // Validar que solo contenga letras y espacios
+    const lettersOnlyRegex = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/;
+    
+    if (!this.customSpecialty || this.customSpecialty.trim().length === 0) {
+      this.messageService.showWarning('Ingrese el nombre de la especialidad');
+      return;
+    }
+    
+    if (!lettersOnlyRegex.test(this.customSpecialty)) {
+      this.messageService.showWarning('La especialidad solo puede contener letras y espacios');
+      return;
+    }
+    
+    // Verificar que no exista ya
+    const exists = this.specialities.find(
+      s => s.name.toLowerCase() === this.customSpecialty.trim().toLowerCase()
+    );
+    
+    if (exists) {
+      this.messageService.showWarning('Esta especialidad ya existe');
+      // Si ya existe, agregarla a las seleccionadas
+      if (!this.selectedSpecialties.includes(exists.id)) {
+        this.selectedSpecialties.push(exists.id);
+      }
+      this.customSpecialty = '';
+      this.showCustomSpecialty = false;
+      return;
+    }
+    
+    try {
+      this.loading = true;
+      
+      // Crear la especialidad en la base de datos
+      const newSpecialty = await this.supabase.createSpecialty(this.customSpecialty.trim());
+      
+      if (newSpecialty && newSpecialty[0]) {
+        // Agregar a la lista local de especialidades
+        this.specialities.push({
+          id: newSpecialty[0].id,
+          name: newSpecialty[0].name
+        });
+        
+        // Agregar a las especialidades seleccionadas
+        this.selectedSpecialties.push(newSpecialty[0].id);
+        
+        // Ordenar alfabéticamente
+        this.specialities.sort((a, b) => a.name.localeCompare(b.name));
+        
+        this.messageService.showSuccess('Especialidad agregada correctamente');
+        this.customSpecialty = '';
+        this.showCustomSpecialty = false;
+      }
+    } catch (error) {
+      console.error('Error creating specialty:', error);
+      this.messageService.showError('Error al crear la especialidad. Por favor intenta nuevamente.');
+    } finally {
+      this.loading = false;
+    }
+  }
+
+  /** Registra un nuevo usuario validando datos, subiendo imágenes y creando el perfil */
   async register() {
     this.loading = true;
     try {
@@ -183,10 +267,9 @@ export class RegistroComponent {
           return;
         }
         
-        // Validar especialidad
-        const finalSpecialty = this.showCustomSpecialty ? this.customSpecialty : this.specialty;
-        if (!finalSpecialty) {
-          this.messageService.showWarning('Debe seleccionar o ingresar una especialidad');
+        // Validar que tenga al menos una especialidad seleccionada
+        if (this.selectedSpecialties.length === 0) {
+          this.messageService.showWarning('Debe seleccionar al menos una especialidad');
           this.loading = false;
           return;
         }
@@ -227,11 +310,11 @@ export class RegistroComponent {
           age: this.age,
           dni: this.dni,
           role: this.role,
-          specialty: this.showCustomSpecialty ? this.customSpecialty : this.specialty,
+          selectedSpecialties: this.selectedSpecialties,
+          customSpecialty: this.customSpecialty,
           health_insurance: this.health_insurance,
           profileImage1: image1Base64,
-          profileImage2: image2Base64,
-          customSpecialty: this.showCustomSpecialty
+          profileImage2: image2Base64
         }));
         this.messageService.showSuccess('Registro iniciado. Por favor confirmá tu correo electrónico antes de completar el perfil.');
         this.loading = false;
@@ -258,7 +341,6 @@ export class RegistroComponent {
       }
 
       // Crear o actualizar el perfil
-      const finalSpecialty = this.showCustomSpecialty ? this.customSpecialty : this.specialty;
       const profileData = {
         role: this.role,
         email: this.email,
@@ -305,30 +387,18 @@ export class RegistroComponent {
           console.warn('No se pudo crear patients_data:', e);
         }
       } else if (this.role === 'specialist') {
-        // Si es especialidad personalizada, crearla primero
-        let specialtyId = null;
-        
-        if (this.showCustomSpecialty && this.customSpecialty) {
+        // Las especialidades ya fueron creadas con addCustomSpecialty()
+        // Solo necesitamos crear specialist_data para cada una seleccionada
+        for (const specialtyId of this.selectedSpecialties) {
           try {
-            const newSpecialty = await this.supabase.createSpecialty(this.customSpecialty);
-            specialtyId = newSpecialty[0].id;
+            await this.supabase.createSpecialistData({
+              user_id: userId,
+              specialty_id: specialtyId,
+              is_approved: false
+            });
           } catch (e) {
-            console.warn('No se pudo crear la especialidad personalizada:', e);
+            console.warn('No se pudo crear specialists_data para especialidad:', specialtyId, e);
           }
-        } else if (this.specialty) {
-          // Buscar el ID de la especialidad seleccionada
-          const found = this.specialities.find(s => s.name === this.specialty);
-          specialtyId = found ? found.id : null;
-        }
-
-        try {
-          await this.supabase.createSpecialistData({
-            user_id: userId,
-            specialty_id: specialtyId,
-            is_approved: false
-          });
-        } catch (e) {
-          console.warn('No se pudo crear specialists_data:', e);
         }
       }
 
@@ -344,6 +414,18 @@ export class RegistroComponent {
 
   goToLogin() {
     this.router.navigate(['/login']);
+  }
+
+  selectRole(role: 'patient' | 'specialist') {
+    this.role = role;
+  }
+
+  changeRole() {
+    this.role = '';
+    // Resetear campos específicos del rol
+    this.selectedSpecialties = [];
+    this.customSpecialty = '';
+    this.health_insurance = '';
   }
 
   goBackWithConfirmation() {
@@ -475,9 +557,8 @@ export class RegistroComponent {
     this.specialtyTouched = true;
     
     if (this.role === 'specialist') {
-      const finalSpecialty = this.showCustomSpecialty ? this.customSpecialty : this.specialty;
-      if (!finalSpecialty) {
-        this.specialtyError = 'Debe seleccionar o ingresar una especialidad';
+      if (this.selectedSpecialties.length === 0) {
+        this.specialtyError = 'Debe seleccionar al menos una especialidad';
       } else {
         this.specialtyError = '';
       }

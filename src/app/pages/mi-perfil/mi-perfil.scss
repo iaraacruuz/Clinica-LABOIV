@@ -177,6 +177,176 @@
   border-radius: 16px;
   box-shadow: 0 6px 30px rgba(0, 0, 0, 0.1);
   overflow: hidden;
+  padding: 40px;
+}
+
+// ==================== ESPECIALIDADES ====================
+
+.specialties-management {
+  margin-bottom: 40px;
+  padding-bottom: 30px;
+  border-bottom: 2px solid #e9ecef;
+}
+
+.no-specialties {
+  text-align: center;
+  padding: 30px;
+  background: #f8f9fa;
+  border-radius: 12px;
+  margin-top: 20px;
+
+  p {
+    color: #666;
+    font-size: 1.1rem;
+    margin: 0;
+  }
+}
+
+.specialties-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin-top: 20px;
+}
+
+.specialty-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 25px;
+  background: linear-gradient(135deg, #f8f9fa, #ffffff);
+  border: 2px solid #e9ecef;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+
+  &:hover {
+    border-color: #3498db;
+    box-shadow: 0 4px 15px rgba(52, 152, 219, 0.2);
+    transform: translateY(-2px);
+  }
+
+  .specialty-info {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex: 1;
+
+    .specialty-name {
+      font-size: 1.2rem;
+      font-weight: 600;
+      color: #2c3e50;
+    }
+
+    .specialty-status {
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 600;
+
+      &.approved {
+        background: #d4edda;
+        color: #155724;
+      }
+
+      &.pending {
+        background: #fff3cd;
+        color: #856404;
+      }
+    }
+  }
+
+  .btn-delete-specialty {
+    background: #e74c3c;
+    border: none;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1.1rem;
+    transition: all 0.3s ease;
+
+    &:hover {
+      background: #c0392b;
+      transform: scale(1.1);
+    }
+  }
+}
+
+.add-specialty-form {
+  margin-top: 25px;
+  padding: 30px;
+  background: #f8f9fa;
+  border-radius: 12px;
+  border: 2px dashed #3498db;
+
+  h3 {
+    margin: 0 0 20px 0;
+    color: #2c3e50;
+    font-size: 1.4rem;
+  }
+
+  .form-group {
+    margin-bottom: 20px;
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: #555;
+    }
+
+    .select-field,
+    .input-field {
+      width: 100%;
+      padding: 12px 16px;
+      border: 2px solid #dee2e6;
+      border-radius: 8px;
+      font-size: 1rem;
+      transition: all 0.3s ease;
+
+      &:focus {
+        outline: none;
+        border-color: #3498db;
+        box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+      }
+
+      &:disabled {
+        background: #e9ecef;
+        cursor: not-allowed;
+      }
+    }
+  }
+
+  .divider-or {
+    text-align: center;
+    margin: 25px 0;
+    position: relative;
+
+    &::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: #dee2e6;
+    }
+
+    span {
+      position: relative;
+      background: #f8f9fa;
+      padding: 0 15px;
+      color: #999;
+      font-weight: 600;
+    }
+  }
+
+  .form-actions {
+    display: flex;
+    gap: 15px;
+    justify-content: flex-end;
+    margin-top: 25px;
+  }
 }
 
 .section-header {
@@ -599,7 +769,7 @@
     margin-bottom: 25px;
     border-bottom: 2px solid #e0e0e0;
 
-    h3 {
+    h2 {
       margin: 0;
       color: #2c3e50;
       font-size: 1.8rem;
@@ -627,6 +797,37 @@
       &:disabled {
         opacity: 0.6;
         cursor: not-allowed;
+      }
+    }
+  }
+
+  .filter-section {
+    margin-bottom: 25px;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 8px;
+
+    label {
+      display: block;
+      margin-bottom: 10px;
+      color: #555;
+      font-weight: 600;
+      font-size: 1rem;
+    }
+
+    .form-control {
+      width: 100%;
+      max-width: 400px;
+      padding: 12px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 1rem;
+      transition: border-color 0.3s ease;
+
+      &:focus {
+        outline: none;
+        border-color: #3498db;
+        box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
       }
     }
   }

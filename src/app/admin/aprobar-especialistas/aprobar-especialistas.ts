@@ -3,13 +3,12 @@ import { CommonModule } from '@angular/common';
 import { SupabaseService } from '../../services/supabase.service';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { CaptchaComponent } from '../../shared/captcha/captcha';
 import { MessageService } from '../../services/message.service';
 
 @Component({
   selector: 'app-aprobar-especialistas',
   standalone: true,
-  imports: [CommonModule, FormsModule, CaptchaComponent],
+  imports: [CommonModule, FormsModule],
   templateUrl: './aprobar-especialistas.html'
 })
 export class AprobarEspecialistasComponent implements OnInit {
@@ -47,19 +46,16 @@ export class AprobarEspecialistasComponent implements OnInit {
   async loadSpecialists() {
     this.loading = true;
     try {
-      // Get all specialists from profiles
       const { data: profiles } = await this.supabase.client
         .from('profiles')
         .select('*')
         .eq('role', 'specialist');
 
-      // For each specialist, get their specialty name
       const specialistsWithData = await Promise.all(
         (profiles || []).map(async (profile) => {
           try {
             const specData = await this.supabase.getSpecialistData(profile.id);
             if (specData && specData.specialty_id) {
-              // Get specialty name
               const { data: specialty } = await this.supabase.client
                 .from('specialties')
                 .select('name')
@@ -103,6 +99,7 @@ export class AprobarEspecialistasComponent implements OnInit {
     }
   }
 
+  /** Aplica los filtros de búsqueda y estado de aprobación */
   applyFilters() {
     this.filteredSpecialists = this.specialists.filter(esp => {
 
@@ -118,6 +115,7 @@ export class AprobarEspecialistasComponent implements OnInit {
     });
   }
 
+  /** Cambia el estado de aprobación de un especialista */
   async toggleApproval(user: any) {
     try {
       await this.supabase.approveSpecialist(user.id, !user.is_approved);
@@ -128,7 +126,7 @@ export class AprobarEspecialistasComponent implements OnInit {
     }
   }
 
-  // Create a new user from admin panel
+  /** Crea un nuevo usuario desde el panel de administración validando todos los campos requeridos */
   async createUser() {
     this.loading = true;
     try {
@@ -167,14 +165,12 @@ export class AprobarEspecialistasComponent implements OnInit {
         return;
       }
 
-      // Validar especialidad para especialistas
       if (this.newUser.role === 'specialist' && !this.newUser.specialty) {
         this.messageService.showWarning('Debe seleccionar una especialidad para el especialista');
         this.loading = false;
         return;
       }
 
-      // Validar obra social para pacientes
       if (this.newUser.role === 'patient' && !this.newUser.health_insurance) {
         this.messageService.showWarning('Debe ingresar la obra social del paciente');
         this.loading = false;
@@ -184,12 +180,10 @@ export class AprobarEspecialistasComponent implements OnInit {
       const res: any = await this.supabase.register(this.newUser.email, this.newUser.password, { role: this.newUser.role });
       if (res.error) throw res.error;
 
-      // Try to obtain created user id
+      
       const userId = res?.data?.user?.id ?? (await this.supabase.getCurrentUser())?.id ?? null;
 
       if (!userId) {
-        // If signup requires email confirmation, signUp may not return user id.
-        // Save a pending item for admin to be aware.
         const pending = { email: this.newUser.email, datosRegistro: {
           perfil: this.newUser.role,
           nombre: this.newUser.name,
@@ -208,7 +202,7 @@ export class AprobarEspecialistasComponent implements OnInit {
         return;
       }
 
-      // Subir imágenes a Supabase Storage
+      // Subir imágenes a Supa
       let imageUrl1 = '';
       let imageUrl2 = '';
 
@@ -263,7 +257,7 @@ export class AprobarEspecialistasComponent implements OnInit {
         }
       }
 
-      // Role specific data: try to update if exists, otherwise create
+      // Role specific data: trata de actualizar si existe, sino lo crea
       if (this.newUser.role === 'specialist') {
         const found = (this.specialities || []).find(s => s.name === this.newUser.specialty || s.id === this.newUser.specialty);
         const specialty_id = found ? found.id : null;
@@ -272,7 +266,7 @@ export class AprobarEspecialistasComponent implements OnInit {
         try {
           await this.supabase.updateSpecialistData(userId, { specialty_id, is_approved: false });
         } catch (e) {
-          // create if update fails
+          
           try {
             await this.supabase.createSpecialistData({ user_id: userId, specialty_id, is_approved: false });
           } catch (e2) {
@@ -346,6 +340,5 @@ export class AprobarEspecialistasComponent implements OnInit {
     this.router.navigate(['/dashboard']);
   }
 
-  // Call admin endpoint to confirm a user's email (requires adminApiBase set)
-  // (confirmEmail removed — confirmation handled manually in Supabase or via service role script)
+ 
 }

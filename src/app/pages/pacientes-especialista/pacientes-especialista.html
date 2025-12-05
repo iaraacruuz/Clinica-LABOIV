@@ -20,17 +20,25 @@
            class="patient-card"
            (click)="viewPatientHistory(patient)"
            @zoomIn>
-        <div class="patient-icon">👤</div>
+        <div class="patient-avatar">
+          <img *ngIf="patient.profile_image_url" 
+               [src]="patient.profile_image_url" 
+               [alt]="patient.name"
+               class="patient-photo" />
+          <div *ngIf="!patient.profile_image_url" class="patient-icon-default">
+            👤
+          </div>
+        </div>
         <div class="patient-info">
           <h3 class="patient-name">{{ patient.name }} {{ patient.last_name }}</h3>
+          <p class="patient-detail">
+            <span class="label">Email:</span> {{ patient.email || 'No registrado' }}
+          </p>
           <p class="patient-detail" *ngIf="patient.dni">
             <span class="label">DNI:</span> {{ patient.dni }}
           </p>
           <p class="patient-detail" *ngIf="patient.age">
             <span class="label">Edad:</span> {{ patient.age }} años
-          </p>
-          <p class="patient-detail">
-            <span class="label">Email:</span> {{ patient.email }}
           </p>
         </div>
         <div class="view-history-btn">

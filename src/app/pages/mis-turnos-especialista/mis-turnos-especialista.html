@@ -282,58 +282,131 @@
 
         <!-- Campos adicionales dinámicos -->
         <div class="form-section">
-          <h3>Datos Adicionales (Opcional)</h3>
-          <small>Hasta 3 campos personalizados</small>
-
-          <div class="form-row additional-field">
-            <div class="form-group">
-              <input
-                type="text"
-                [(ngModel)]="medicalHistory.additionalField1Key"
-                placeholder="Campo (Ej: Alergias)"
-              />
+          <h3>Datos Clínicos Adicionales</h3>
+          
+          <!-- Sprint 5: Campos Dinámicos Específicos -->
+          <div class="dynamic-controls-section">
+            <h4>Evaluación del Paciente (Sprint 5)</h4>
+            
+            <div class="form-row">
+              <!-- Control de Rango 0-100 -->
+              <div class="form-group range-control">
+                <label for="rangeField">
+                  Nivel de Dolor: <strong>{{ medicalHistory.rangeField }}</strong>/100
+                </label>
+                <input
+                  type="range"
+                  id="rangeField"
+                  min="0"
+                  max="100"
+                  step="1"
+                  [(ngModel)]="medicalHistory.rangeField"
+                  class="range-slider"
+                />
+                <div class="range-labels">
+                  <span>0 (Sin dolor)</span>
+                  <span>50 (Moderado)</span>
+                  <span>100 (Severo)</span>
+                </div>
+              </div>
             </div>
-            <div class="form-group">
-              <input
-                type="text"
-                [(ngModel)]="medicalHistory.additionalField1Value"
-                placeholder="Valor"
-              />
+
+            <div class="form-row">
+              <!-- Campo Numérico -->
+              <div class="form-group">
+                <label for="numericField">Días con Síntomas</label>
+                <input
+                  type="number"
+                  id="numericField"
+                  [(ngModel)]="medicalHistory.numericField"
+                  placeholder="¿Cuántos días tiene los síntomas?"
+                  min="0"
+                />
+              </div>
+
+              <!-- Switch Si/No -->
+              <div class="form-group switch-control">
+                <label for="switchField">¿Requiere Seguimiento?</label>
+                <div class="switch-container">
+                  <label class="switch">
+                    <input
+                      type="checkbox"
+                      id="switchField"
+                      [(ngModel)]="medicalHistory.switchField"
+                    />
+                    <span class="slider round"></span>
+                  </label>
+                  <span class="switch-label">
+                    {{ medicalHistory.switchField ? 'Sí' : 'No' }}
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
 
-          <div class="form-row additional-field">
-            <div class="form-group">
-              <input
-                type="text"
-                [(ngModel)]="medicalHistory.additionalField2Key"
-                placeholder="Campo (Ej: Medicación actual)"
-              />
-            </div>
-            <div class="form-group">
-              <input
-                type="text"
-                [(ngModel)]="medicalHistory.additionalField2Value"
-                placeholder="Valor"
-              />
+          <!-- Campos fijos predefinidos -->
+          <div class="fixed-fields-section">
+            <h4>Campos Obligatorios</h4>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="fixedField1">Síntoma Principal</label>
+                <input
+                  type="text"
+                  id="fixedField1"
+                  [(ngModel)]="medicalHistory.fixedField1Value"
+                  placeholder="Ej: Dolor de cabeza, fiebre, tos..."
+                />
+              </div>
+              <div class="form-group">
+                <label for="fixedField2">Área Afectada</label>
+                <input
+                  type="text"
+                  id="fixedField2"
+                  [(ngModel)]="medicalHistory.fixedField2Value"
+                  placeholder="Ej: Pierna, brazo, abdomen..."
+                />
+              </div>
             </div>
           </div>
 
-          <div class="form-row additional-field">
-            <div class="form-group">
-              <input
-                type="text"
-                [(ngModel)]="medicalHistory.additionalField3Key"
-                placeholder="Campo (Ej: Antecedentes)"
-              />
+          <!-- Campos adicionales opcionales -->
+          <div class="dynamic-fields-section">
+            <h4>Campos Adicionales (Opcional)</h4>
+            <small>Agregá hasta 3 campos personalizados si es necesario</small>
+
+            <div *ngFor="let field of dynamicFields; let i = index" class="form-row additional-field">
+              <div class="form-group">
+                <input
+                  type="text"
+                  [(ngModel)]="field.key"
+                  placeholder="Nombre del campo (Ej: Alergias)"
+                />
+              </div>
+              <div class="form-group">
+                <input
+                  type="text"
+                  [(ngModel)]="field.value"
+                  placeholder="Valor"
+                />
+              </div>
+              <button 
+                type="button" 
+                class="btn-remove-field" 
+                (click)="removeDynamicField(i)"
+                title="Eliminar campo"
+              >
+                ✕
+              </button>
             </div>
-            <div class="form-group">
-              <input
-                type="text"
-                [(ngModel)]="medicalHistory.additionalField3Value"
-                placeholder="Valor"
-              />
-            </div>
+
+            <button 
+              *ngIf="dynamicFields.length < 3" 
+              type="button" 
+              class="btn-add-field" 
+              (click)="addDynamicField()"
+            >
+              + Agregar campo adicional
+            </button>
           </div>
         </div>
       </div>

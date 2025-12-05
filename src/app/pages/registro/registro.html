@@ -1,5 +1,5 @@
 <div class="register-container">
-  <div class="register-card">
+  <div class="register-card" @slideInFromRight>
     <div class="clinic-logo">
       <img src="clinic-icon.svg" alt="Clínica Online" />
     </div>
@@ -11,14 +11,48 @@
       Volver
     </button>
 
-    <h2>Registro</h2>
+    <h2 *ngIf="!role">¡Hola!</h2>
+    <h2 *ngIf="role">Registro</h2>
 
-    <!-- Selección de rol -->
-    <label for="role" class="input-label">Tipo de usuario</label>
-    <select [(ngModel)]="role" name="role" id="role" class="input-field">
-      <option value="patient">Paciente</option>
-      <option value="specialist">Especialista</option>
-    </select>
+    <!-- Selección de rol con diseño moderno -->
+    <div class="role-selection" *ngIf="!role" @fadeIn>
+      <p class="register-link-text">
+        <a href="/login" class="link-blue">Registrate ahora</a>
+      </p>
+      
+      <button class="role-card patient-card" (click)="selectRole('patient')">
+        <div class="role-avatar">
+          <svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 24 24" fill="#4A90E2" stroke="none">
+            <circle cx="12" cy="8" r="4" fill="#87CEEB"/>
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" fill="#4A90E2"/>
+            <circle cx="12" cy="7" r="3" fill="#FFE4C4"/>
+          </svg>
+        </div>
+        <h3>Paciente</h3>
+        <p>Busca el profesional que necesitas y reserva un turno.</p>
+      </button>
+
+      <button class="role-card specialist-card" (click)="selectRole('specialist')">
+        <div class="role-avatar">
+          <svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 24 24" fill="#2C3E50" stroke="none">
+            <circle cx="12" cy="8" r="4" fill="#34495E"/>
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" fill="#2C3E50"/>
+            <circle cx="12" cy="7" r="3" fill="#FFE4C4"/>
+            <rect x="10" y="3" width="4" height="8" fill="#E74C3C" rx="0.5"/>
+            <rect x="8" y="5" width="8" height="4" fill="#E74C3C" rx="0.5"/>
+          </svg>
+        </div>
+        <h3>Especialista</h3>
+        <p>Gestiona tus turnos y permite que tus pacientes te encuentren fácilmente.</p>
+      </button>
+    </div>
+
+    <!-- Formulario (solo se muestra después de seleccionar rol) -->
+    <div *ngIf="role" class="form-content">
+      <div class="selected-role-badge">
+        <span>{{ role === 'patient' ? '👤 Paciente' : '⚕️ Especialista' }}</span>
+        <button class="btn-change-role" (click)="changeRole()" title="Cambiar tipo de usuario">Cambiar</button>
+      </div>
 
     <!-- Datos personales -->
     <input 
@@ -110,34 +144,49 @@
 
     <!-- Especialidad si es especialista -->
     <div *ngIf="role === 'specialist'" class="fade-field">
-      <label for="specialty" class="input-label">Especialidad</label>
+      <label for="specialty" class="input-label">Especialidades</label>
+      
+      <!-- Especialidades seleccionadas -->
+      <div *ngIf="selectedSpecialties.length > 0" class="selected-specialties">
+        <div *ngFor="let specId of selectedSpecialties" class="specialty-tag">
+          {{ getSpecialtyName(specId) }}
+          <button type="button" class="remove-specialty" (click)="removeSpecialty(specId)">✕</button>
+        </div>
+      </div>
+      
+      <!-- Selector de especialidades -->
       <select 
-        [(ngModel)]="specialty" 
         name="specialty" 
         id="specialty" 
         class="input-field" 
-        (change)="onSpecialtyChange(); validateSpecialty()"
+        (change)="onSpecialtyChange($event); validateSpecialty()"
         (blur)="validateSpecialty()"
         [class.input-error]="specialtyTouched && specialtyError"
       >
         <option value="">-- Seleccionar especialidad --</option>
-        <option *ngFor="let esp of specialities" [value]="esp.name">{{ esp.name }}</option>
-        <option value="otra">✏️ Agregar otra especialidad</option>
+        <option *ngFor="let esp of specialities" [value]="esp.id">{{ esp.name }}</option>
+        <option value="otra">✏️ Agregar nueva especialidad</option>
       </select>
       <div *ngIf="specialtyTouched && specialtyError" class="error-message">{{ specialtyError }}</div>
 
       <!-- Campo para especialidad personalizada -->
-      <div *ngIf="showCustomSpecialty" class="fade-field" style="margin-top: 10px;">
+      <div *ngIf="showCustomSpecialty" class="fade-field custom-specialty-input">
         <input 
           type="text" 
-          placeholder="Ingrese la especialidad" 
+          placeholder="Ingrese la especialidad (solo letras)" 
           [(ngModel)]="customSpecialty" 
           name="customSpecialty"
-          (blur)="validateSpecialty()"
-          (input)="validateSpecialty()"
           class="input-field"
-          [class.input-error]="specialtyTouched && specialtyError"
+          (keyup.enter)="addCustomSpecialty()"
         />
+        <div class="custom-specialty-buttons">
+          <button type="button" class="btn-add-specialty" (click)="addCustomSpecialty()">
+            ✓ Agregar
+          </button>
+          <button type="button" class="btn-cancel-specialty" (click)="cancelCustomSpecialty()">
+            ✕ Cancelar
+          </button>
+        </div>
       </div>
     </div>
 
@@ -221,14 +270,19 @@
       <p>Registrando usuario...</p>
     </div>
 
-    <!-- Captcha -->
-    <app-captcha (onValidated)="onCaptchaValidated($event)"></app-captcha>
+    <!-- Sprint 5: Captcha Personalizado con Directiva -->
+    <div 
+      [appCaptcha]="true"
+      (captchaValidated)="onCaptchaValidated($event)"
+      class="captcha-directive-container">
+    </div>
 
     <button (click)="register()" class="btn-register" [disabled]="loading || !isFormValid()">Registrarse</button>
 
     <div class="login-link">
       <p>¿Ya tenés cuenta?</p>
       <button class="btn-link-login" (click)="goToLogin()">Iniciá sesión aquí</button>
+    </div>
     </div>
   </div>
 </div>

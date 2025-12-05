@@ -126,3 +126,33 @@ export const rotateIn = trigger('rotateIn', [
       style({ opacity: 1, transform: 'rotate(0) scale(1)' }))
   ])
 ]);
+
+/**
+ * Animación de slide desde la derecha hacia la izquierda
+ */
+export const slideInFromRight = trigger('slideInFromRight', [
+  transition(':enter', [
+    style({ opacity: 0, transform: 'translateX(100%)' }),
+    animate('600ms cubic-bezier(0.35, 0, 0.25, 1)', 
+      style({ opacity: 1, transform: 'translateX(0)' }))
+  ]),
+  transition(':leave', [
+    animate('400ms cubic-bezier(0.35, 0, 0.25, 1)', 
+      style({ opacity: 0, transform: 'translateX(-100%)' }))
+  ])
+]);
+
+/**
+ * Animación de slide desde la izquierda hacia la derecha
+ */
+export const slideInFromLeft = trigger('slideInFromLeft', [
+  transition(':enter', [
+    style({ opacity: 0, transform: 'translateX(-100%)' }),
+    animate('600ms cubic-bezier(0.35, 0, 0.25, 1)', 
+      style({ opacity: 1, transform: 'translateX(0)' }))
+  ]),
+  transition(':leave', [
+    animate('400ms cubic-bezier(0.35, 0, 0.25, 1)', 
+      style({ opacity: 0, transform: 'translateX(100%)' }))
+  ])
+]);

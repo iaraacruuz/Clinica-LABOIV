@@ -1,5 +1,5 @@
 <div class="login-container">
-  <div class="login-card">
+  <div class="login-card" @slideInFromLeft>
     <div class="clinic-logo">
       <img src="clinic-icon.svg" alt="Clínica Online" />
     </div>
@@ -47,11 +47,22 @@
       Ingresar
     </button>
 
-    <div class="acceso-rapido-container">
-      <p class="acceso-rapido-titulo">Accesos rápidos</p>
-      <button class="btn-acceso-rapido green" (click)="quickAccess('patient')">Paciente</button>
-      <button class="btn-acceso-rapido blue" (click)="quickAccess('specialist')">Especialista</button>
-      <button class="btn-acceso-rapido purple" (click)="quickAccess('admin')">Administrador</button>
+    <!-- Botones de acceso rápido -->
+    <div class="quick-access-section">
+      <p class="quick-access-title">Acceso Rápido</p>
+      <div class="quick-access-grid">
+        <button 
+          *ngFor="let user of quickAccessUsers" 
+          class="quick-user-btn" 
+          (click)="quickLogin(user.email, user.password)" 
+          [title]="user.label">
+          <div class="user-avatar" [style.background-color]="user.color">
+            <img *ngIf="user.photoUrl" [src]="user.photoUrl" [alt]="user.label" class="avatar-img" />
+            <span *ngIf="!user.photoUrl">{{ user.label.charAt(0) }}</span>
+          </div>
+          <span class="user-label">{{ user.label }}</span>
+        </button>
+      </div>
     </div>
 
     <div class="register-link">
