@@ -123,20 +123,21 @@ export class SolicitarTurnoComponent implements OnInit {
       this.loadingSlots = true;
       
       const { data, error } = await this.supabaseService.client
-        .from('specialist_availability')
+        .from('specialists_data')
         .select(`
-          specialist_id,
+          user_id,
           profiles!inner(id, name, last_name, is_approved, profile_image_url)
         `)
         .eq('specialty_id', this.selectedSpecialtyId)
+        .eq('is_approved', true)
         .eq('profiles.is_approved', true);
 
       if (error) throw error;
       
       const uniqueSpecialists = new Map();
       (data || []).forEach((item: any) => {
-        if (!uniqueSpecialists.has(item.specialist_id) && this.selectedSpecialtyId) {
-          uniqueSpecialists.set(item.specialist_id, {
+        if (!uniqueSpecialists.has(item.user_id) && this.selectedSpecialtyId) {
+          uniqueSpecialists.set(item.user_id, {
             id: item.profiles.id,
             name: item.profiles.name,
             last_name: item.profiles.last_name,
