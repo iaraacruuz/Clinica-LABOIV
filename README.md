@@ -1,5 +1,7 @@
-#Clinica Online
-![Texto alternativo]("https://github.com/user-attachments/assets/ac5e71e4-1afa-47fd-8711-3bb6342486e3")
+# Clínica Online
 
-La ClinicaOnline es una aplicación que puede ser utilizada para registrar pacientes y especialistas, y registrar turnos médicos entre ambos.
+![Logo]("https://github.com/user-attachments/assets/d5d19016-052a-4668-acde-05f20aa72b7b")
+
+La Clínica Online es una aplicación que puede ser utilizada para registrar pacientes y especialistas, y registrar turnos médicos entre ambos.
+
 
